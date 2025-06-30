@@ -1,0 +1,21 @@
+version: '3.8'
+services:
+  backend:
+    build: ./backend
+    env_file:
+      - ./backend/.env
+    ports:
+      - '3001:3001'
+    depends_on:
+      - redis
+    environment:
+      - REDIS_URL=${REDIS_URL}
+    restart: unless-stopped
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--save", "", "--appendonly", "no"]
+    ports:
+      - '6379:6379'
+    restart: unless-stopped
+    # For Upstash, this is just a placeholder; actual connection is via REDIS_URL
+    # Remove this service if only using Upstash externally 

@@ -1,0 +1,35 @@
+# Node
+node_modules/
+.env
+.env.*
+dist/
+build/
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Next.js
+.next/
+out/
+
+# Docker
+*.local
+
+# VSCode
+.vscode/
+
+# Misc
+coverage/
+*.tgz
+
+# Ignore frontend and backend dependencies
+/frontend/node_modules/
+/backend/node_modules/ 
