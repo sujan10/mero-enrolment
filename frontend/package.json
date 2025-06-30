@@ -36,6 +36,8 @@
     "zustand": "^4.4.1"
   },
   "devDependencies": {
+    "@types/node": "^24.0.7",
+    "@types/react": "^19.1.8",
     "autoprefixer": "^10.4.16",
     "postcss": "^8.4.32",
     "typescript": "^5.4.4"
