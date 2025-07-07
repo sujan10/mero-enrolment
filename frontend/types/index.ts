@@ -33,7 +33,8 @@ export interface PDFFormField {
 // Form Builder Types
 export interface FormField {
   id: string;
-  label: string;
+  name: string; // Field name (e.g., "firstName", "email")
+  label: string; // Display label (e.g., "First Name", "Email Address")
   type: 'text' | 'email' | 'number' | 'tel' | 'date' | 'checkbox' | 'radio' | 'select' | 'textarea' | 'signature';
   required: boolean;
   placeholder?: string;

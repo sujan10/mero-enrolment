@@ -7,7 +7,7 @@ import { Button } from '../ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Badge } from '../ui/badge';
 import { useAppStore } from '../../lib/store';
-import { PDFDocument, PDFFormField } from '../../types';
+import { PDFDocument, PDFFormField, PDFPage } from '../../types';
 import toast from 'react-hot-toast';
 
 // Dynamic imports for react-pdf components
@@ -110,7 +110,7 @@ const PdfUploader: React.FC = () => {
           const arrayBuffer = e.target?.result as ArrayBuffer;
           const pdf = await pdfjs.getDocument({ data: arrayBuffer }).promise;
           
-          const pages = [];
+          const pages: PDFPage[] = [];
           const allFormFields: PDFFormField[] = [];
           
           for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
@@ -127,8 +127,8 @@ const PdfUploader: React.FC = () => {
             // Extract form fields from the page
             const annotations = await page.getAnnotations();
             const pageFormFields: PDFFormField[] = annotations
-              .filter(annotation => annotation.subtype === 'Widget')
-              .map((annotation, index) => ({
+              .filter((annotation: any) => annotation.subtype === 'Widget')
+              .map((annotation: any, index: number) => ({
                 id: `${pdfDoc.id}_page${pageNum}_field${index}`,
                 name: annotation.fieldName || `field_${index}`,
                 type: getFieldType(annotation),

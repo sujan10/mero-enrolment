@@ -20,7 +20,8 @@ const FormBuilder: React.FC = () => {
     label: '',
     type: 'text',
     required: false,
-    placeholder: ''
+    placeholder: '',
+    order: 0
   });
 
   const fieldTypes: { value: FormFieldType; label: string }[] = [
@@ -49,7 +50,8 @@ const FormBuilder: React.FC = () => {
       required: newField.required || false,
       placeholder: newField.placeholder || '',
       options: newField.type === 'select' || newField.type === 'radio' ? ['Option 1'] : undefined,
-      validation: newField.validation || {}
+      validation: newField.validation || {},
+      order: formFields.length
     };
 
     addFormField(field);
@@ -58,7 +60,8 @@ const FormBuilder: React.FC = () => {
       label: '',
       type: 'text',
       required: false,
-      placeholder: ''
+      placeholder: '',
+      order: 0
     });
     toast.success('Field added successfully');
   };
