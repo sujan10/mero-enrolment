@@ -1,0 +1,140 @@
+# Cursor Rules for Mero Enrolment Project
+
+## Project Vision & Core Purpose
+You are supporting the development of a web app designed to automate the process of filling PDF forms using data collected via an online form.
+
+### Core Idea:
+The app allows users to upload one or more PDF documents (even those with existing form fields), and then design a web-based form interface that mirrors or extends those PDF fields. The user can build a multi-page online form with progress tracking and breadcrumb navigation.
+
+### Key Workflow:
+1. User uploads a single or multiple PDF files.
+2. The app parses or allows the user to manually mark the fillable fields in the PDFs.
+3. The user builds a custom web form (with text inputs, checkboxes, radios, dates, signatures, etc.).
+4. The user maps each form field to corresponding fields in the PDF — including support for **repeated fields** (e.g. a name that appears on multiple pages).
+5. Users can preview, test-fill, and generate a final filled PDF upon submission.
+6. The generated PDF is downloadable or optionally sent somewhere (via API or email).
+
+### Non-Functional Goals:
+- Clean, responsive UI/UX that's usable even by non-technical users
+- Support for multiple file uploads and mapping to a unified form
+- Ability to extend or edit mappings later
+- Form logic and field grouping where applicable
+- Signature support via drawing or upload
+
+### Purpose of this Project:
+Reduce redundant data entry for repeated or complex multi-page PDFs, automate field duplication logic, and streamline document workflows in education, legal, and HR environments.
+
+### Assumptions:
+- Users may not know about PDF field naming conventions
+- Some PDFs may not have existing form fields; user will manually define them
+- We are prioritizing mapping efficiency and clarity
+
+## Project Overview
+This is a Next.js 14+ project with TypeScript, using:
+- Frontend: Next.js with TypeScript, Tailwind CSS, shadcn/ui components
+- Backend: Node.js/TypeScript server
+- PDF handling: react-pdf for client-side PDF viewing and manipulation
+- PDF form filling: pdf-lib for programmatic PDF field filling
+
+## General Code Standards
+
+### Next.js 14+ Best Practices
+- Always use "use client" directive for components that use React hooks (useState, useEffect, etc.)
+- Prefer Server Components by default unless client-side interactivity is needed
+- Use App Router patterns (app/ directory structure)
+- Follow Next.js 14+ file conventions
+
+### TypeScript Rules
+- Always provide proper TypeScript types for props, state, and function parameters
+- Use interfaces for component props
+- Avoid 'any' type - use proper typing
+- Use React.FC for functional components when appropriate
+
+### Component Guidelines
+- Use shadcn/ui components when available (Button, Card, Input, etc.)
+- Follow consistent naming: PascalCase for components, camelCase for variables
+- Keep components focused and single-purpose
+- Use proper error handling and loading states
+
+### Styling
+- Use Tailwind CSS classes for styling
+- Follow responsive design principles
+- Use consistent spacing and layout patterns
+- Prefer utility classes over custom CSS
+
+### File Structure
+- Components go in `frontend/components/ui/` for reusable UI components
+- Page components go in `frontend/app/`
+- Backend code goes in `backend/src/`
+
+## Specific Rules
+
+### PDF Handling & Form Automation
+- Always validate file types before processing
+- Use client-side PDF viewing with react-pdf
+- Handle PDF loading errors gracefully
+- Show appropriate loading states during PDF processing
+- Support multiple PDF uploads and field mapping
+- Implement PDF field detection and manual field marking
+- Enable form field mapping between web forms and PDF fields
+- Support repeated fields across multiple pages
+- Provide signature capture and drawing capabilities
+- Generate filled PDFs using pdf-lib
+- Include preview and test-fill functionality
+- Support form logic and field grouping
+- Prioritize user-friendly interface for non-technical users
+
+### Error Handling
+- Always include error boundaries where appropriate
+- Provide meaningful error messages to users
+- Log errors appropriately for debugging
+
+### Performance
+- Use proper React optimization techniques (memo, useMemo, useCallback)
+- Lazy load components when appropriate
+- Optimize bundle size by avoiding unnecessary imports
+
+### Security
+- Validate all user inputs
+- Sanitize data before rendering
+- Follow security best practices for file handling
+
+## Code Review Checklist
+Before suggesting code, ensure:
+1. ✅ Proper TypeScript types are used
+2. ✅ "use client" directive is present if needed
+3. ✅ Error handling is implemented
+4. ✅ Loading states are considered
+5. ✅ Component follows project naming conventions
+6. ✅ Tailwind classes are used appropriately
+7. ✅ Code is readable and well-commented
+8. ✅ No security vulnerabilities are introduced
+
+## Common Patterns to Follow
+- Use destructuring for props and state
+- Prefer functional components over class components
+- Use proper event handling patterns
+- Implement proper form validation
+- Use semantic HTML elements
+- Follow accessibility best practices
+- Implement multi-step form navigation with breadcrumbs
+- Use drag-and-drop for PDF field mapping
+- Provide visual feedback for field mapping relationships
+- Include form field grouping and conditional logic
+- Support signature capture with drawing canvas
+- Implement PDF preview with field highlighting
+- Use progress indicators for multi-page workflows
+- Provide clear error messages for PDF processing issues
+
+## What to Avoid
+- ❌ Using 'any' type in TypeScript
+- ❌ Missing "use client" directive for client components
+- ❌ Inline styles when Tailwind classes are available
+- ❌ Unhandled promises or async operations
+- ❌ Hardcoded values that should be configurable
+- ❌ Console.log statements in production code
+- ❌ Complex PDF field mapping that confuses non-technical users
+- ❌ Single-page forms when multi-page with progress tracking is needed
+- ❌ Ignoring repeated field scenarios across multiple PDF pages
+- ❌ Missing preview functionality before PDF generation
+- ❌ Poor error handling for PDF parsing and field detection 

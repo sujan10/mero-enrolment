@@ -1,17 +1,22 @@
-import { Button } from "../components/ui/button";
+"use client";
+
+import { Toaster } from 'react-hot-toast';
+import WorkflowStepper from '../components/workflow/WorkflowStepper';
 
 export default function HomePage() {
   return (
-    <main className="flex flex-col items-center justify-center min-h-screen p-8">
-      <h1 className="text-2xl font-bold mb-4">Mero Enrolment</h1>
-      <Button>Test Button</Button>
-      <div className="mt-8 w-full max-w-md">
-        <label className="block mb-2 font-medium">PDF Upload (placeholder)</label>
-        <input type="file" accept="application/pdf" className="mb-4" disabled />
-        <div className="border rounded p-4 bg-gray-50 text-gray-400 text-center">
-          PDF preview will appear here (pdfjs-dist placeholder)
-        </div>
-      </div>
-    </main>
+    <div className="min-h-screen bg-gray-50">
+      <WorkflowStepper />
+      <Toaster 
+        position="top-right"
+        toastOptions={{
+          duration: 4000,
+          style: {
+            background: '#363636',
+            color: '#fff',
+          },
+        }}
+      />
+    </div>
   );
 } 
