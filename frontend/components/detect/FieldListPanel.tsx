@@ -80,13 +80,11 @@ const FieldListPanel: React.FC<FieldListPanelProps> = ({
             style={{width:'100%'}}
           >
             {/* Checkbox strip with caret */}
-            <div className={`flex flex-col items-center justify-start w-8 border-r border-gray-300 ${mappedFieldIds.has(field.id)?'bg-blue-50':'bg-gray-200'}`}>
+            <div className={`flex flex-col items-center justify-start w-8 border-r border-gray-300 ${mappedFieldIds.has(field.id)?'bg-blue-600':'bg-gray-200'}`}>
               <input type="checkbox" className="h-4 w-4 mt-1 text-blue-600" checked={selectedForMapping.has(field.id)} onChange={(e)=>onCheckboxToggle(field.id,e.target.checked)} />
-              {mappedFieldIds.has(field.id)?(
-                <button className="mt-0.5" onClick={(e)=>{e.stopPropagation();setExpanded(prev=>({...prev,[field.id]:!prev[field.id]}))}}>
-                  {expanded[field.id]?<ChevronDown className="h-3 w-3"/>:<ChevronRight className="h-3 w-3"/>}
-                </button>
-              ):<span className="h-3 w-3 mt-0.5"/>}
+              <button className={`mt-0.5 ${mappedFieldIds.has(field.id)?'text-white':'text-gray-400 cursor-not-allowed'}`} disabled={!mappedFieldIds.has(field.id)} onClick={(e)=>{e.stopPropagation();if(mappedFieldIds.has(field.id)) setExpanded(prev=>({...prev,[field.id]:!prev[field.id]}))}}>
+                {expanded[field.id]?<ChevronDown className="h-3 w-3"/>:<ChevronRight className="h-3 w-3"/>}
+              </button>
             </div>
 
             {/* Main content */}

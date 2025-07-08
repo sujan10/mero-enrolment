@@ -101,7 +101,7 @@ const PdfUploader: React.FC = () => {
         } else {
           const pdfFile = await convertImageToPdf(file);
           toast('Running OCR to detect fields...');
-          const ocrText = await runOcr(file);
+          const ocrData = await runOcr(file);
           pdfDoc = {
             id: pdfId,
             name: file.name,
@@ -115,7 +115,40 @@ const PdfUploader: React.FC = () => {
           // Populate pages dimensions from generated PDF so viewer can render
           await processPdf(pdfDoc);
 
-          if (!ocrText.trim()) {
+          // Generate candidate fields from OCR words
+          const page0 = pdfDoc.pages[0];
+          if(page0 && ocrData?.words){
+            const ocrFields: PDFFormField[] = [];
+            const isCandidate = (w:any)=>{
+              const txt=w.text.trim();
+              const boxWidth=w.bbox.x1-w.bbox.x0;
+              if(/^[_\-]+$/.test(txt)) return true; // underline/dash
+              if(txt.length<=2 && w.confidence<60 && boxWidth>30) return true; // blank-ish or low confidence
+              return false;
+            };
+            ocrData.words.forEach((w:any, idx:number)=>{
+              if(!isCandidate(w)) return;
+              const x=w.bbox.x0;
+              const yTop=w.bbox.y0;
+              const width=w.bbox.x1-w.bbox.x0;
+              const height=w.bbox.y1-w.bbox.y0;
+              const pdfX=x;
+              const pdfY = page0.height - (yTop + height);
+              ocrFields.push({
+                id:`${pdfId}_ocr_${idx}`,
+                name:`ocr_field_${idx}`,
+                type:'text',
+                x:pdfX,
+                y:pdfY,
+                width,
+                height,
+                pageNumber:1
+              });
+            });
+            pdfDoc.formFields.push(...ocrFields);
+            page0.formFields.push(...ocrFields);
+          }
+          if (!ocrData || !ocrData.text.trim()) {
             setError(`No fillable fields detected in ${file.name}. Please add fields manually.`);
             toast.error(`No fillable fields detected in ${file.name}. Please add fields manually.`);
             setFileStatuses(prev => prev.map(f => f.id === pdfId ? { ...f, status: 'error', message: 'No fillable fields detected' } : f));
@@ -229,9 +262,11 @@ const PdfUploader: React.FC = () => {
     return new File([pdfBytes], file.name.replace(/\.(jpg|jpeg|png)$/i, '.pdf'), { type: 'application/pdf' });
   };
 
-  const runOcr = async (file: File): Promise<string> => {
-    const { data } = await Tesseract.recognize(file, 'eng');
-    return data.text;
+  const runOcr = async (file: File): Promise<any> => {
+    const { data } = await Tesseract.recognize(file, 'eng', {
+      tessjs_create_tsv: '1',
+    } as any);
+    return data;
   };
 
   const getFieldType = (annotation: any): PDFFormField['type'] => {

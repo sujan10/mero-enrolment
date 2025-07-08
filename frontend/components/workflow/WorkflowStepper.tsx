@@ -35,6 +35,9 @@ const DetectFieldsStep = dynamic(() => import('../detect/DetectFieldsStep'), {
   loading: () => <div className="text-center py-8">Loading Detect Fields…</div>,
 });
 
+const BuildFormStep = dynamic(()=>import('../build/BuildFormStep'),{ ssr:false, loading:()=> <div className="text-center py-8">Loading Build Form…</div> });
+const MapFieldsStep = dynamic(()=>import('../mapping/MapFieldsStep'),{ ssr:false, loading:()=> <div className="text-center py-8">Loading Map Fields…</div> });
+
 // Dynamic imports for components that use PDF libraries
 let FormBuilder: any = null;
 let FieldMapper: any = null;
@@ -165,6 +168,8 @@ const WorkflowStepper: React.FC = () => {
     switch (step) {
       case 0: return PdfUploader;
       case 1: return DetectFieldsStep;
+      case 2: return MapFieldsStep;
+      case 3: return BuildFormStep;
       default: return null;
     }
   };
@@ -282,8 +287,8 @@ const WorkflowStepper: React.FC = () => {
 
         {/* Current Step Content */}
         <Card>
-          {/* Hide header for Upload PDF step */}
-          {!(currentStepConfig.title==='Upload PDF' || currentStepConfig.title==='Detect Fields') && (
+          {/* Hide header for steps where we omit title/subtitle */}
+          {!( ['Upload PDF','Detect Fields','Build Form','Map Fields','Preview & Test','Publish Form'].includes(currentStepConfig.title) ) && (
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 {currentStepConfig.title}
@@ -291,7 +296,7 @@ const WorkflowStepper: React.FC = () => {
               <p className="text-gray-600">{currentStepConfig.description}</p>
             </CardHeader>
           )}
-          <CardContent className={currentStepConfig.title==='Upload PDF'||currentStepConfig.title==='Detect Fields'?'pt-6':'pt-0'}>
+          <CardContent className={['Upload PDF','Detect Fields','Build Form','Map Fields','Preview & Test','Publish Form'].includes(currentStepConfig.title)?'pt-6':'pt-0'}>
             {CurrentComponent ? <CurrentComponent /> : (
               <div className="text-center py-8">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-4"></div>

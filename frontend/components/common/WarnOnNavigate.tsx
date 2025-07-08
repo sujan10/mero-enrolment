@@ -13,15 +13,18 @@ const WarnOnNavigate = () => {
     };
     window.addEventListener("beforeunload", handler);
 
-    // Next.js back/route change
-    router.beforePopState(() => {
-      return confirm("You will lose all unsaved progress and exit the app. Continue?");
-    });
+    const popHandler = () => {
+      if(!confirm("You will lose all unsaved progress and exit the app. Continue?")){
+        router.push(router.asPath);
+        return false;
+      }
+      return true;
+    };
+    window.addEventListener('popstate', popHandler);
 
     return () => {
       window.removeEventListener("beforeunload", handler);
-      // cannot remove beforePopState easily; push default true
-      router.beforePopState(() => true);
+      window.removeEventListener('popstate', popHandler);
     };
   }, [router]);
 

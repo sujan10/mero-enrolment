@@ -134,8 +134,8 @@ export const WORKFLOW_CONFIG = {
     steps: [
       { id: WorkflowStep.ADMIN_UPLOAD_PDF, title: 'Upload PDF', description: 'Upload your PDF documents' },
       { id: WorkflowStep.ADMIN_DETECT_FIELDS, title: 'Detect Fields', description: 'Review and edit detected form fields' },
-      { id: WorkflowStep.ADMIN_BUILD_FORM, title: 'Build Form', description: 'Create your web form' },
       { id: WorkflowStep.ADMIN_MAP_FIELDS, title: 'Map Fields', description: 'Connect form fields to PDF fields' },
+      { id: WorkflowStep.ADMIN_BUILD_FORM, title: 'Build Form', description: 'Create your web form' },
       { id: WorkflowStep.ADMIN_PREVIEW_TEST, title: 'Preview & Test', description: 'Test the form before publishing' },
       { id: WorkflowStep.ADMIN_PUBLISH_FORM, title: 'Publish Form', description: 'Make the form available to clients' }
     ]

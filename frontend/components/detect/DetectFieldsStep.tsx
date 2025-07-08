@@ -18,16 +18,15 @@ interface MappedDetail {
 }
 
 const DetectFieldsStep: React.FC = () => {
-  const { pdfs, selectedPdf, updatePdfFields, selectPdf, addFormField, updateFormField, removeFormField, formFields  } = useAppStore();
+  const { pdfs, selectedPdf, updatePdfFields, selectPdf, addFormField, updateFormField, removeFormField, formFields, pdfFieldLinks, addPdfFieldLink, removePdfFieldLink } = useAppStore();
   const pdf = selectedPdf || pdfs[0];
   const [selectedFieldId, setSelectedFieldId] = useState<string | null>(null);
   const [addMode, setAddMode] = useState(false);
   const [pageIndex, setPageIndex] = useState(0);
-  const [zoom, setZoom] = useState(1);
+  const [zoom, setZoom] = useState(0.75);
+  const [docStates,setDocStates] = useState<Record<string,{pageIndex:number;zoom:number;selectedFieldId:string|null}>>({});
   const [errorFieldId, setErrorFieldId] = useState<string|null>(null);
   const [selectedForMapping,setSelectedForMapping]=useState<Set<string>>(new Set());
-  const [formFieldMappings,setFormFieldMappings]=useState<Record<string,MappedDetail[]>>({});
-  const [docStates,setDocStates] = useState<Record<string,{pageIndex:number;zoom:number;selectedFieldId:string|null}>>({});
   const carouselRef = useRef<HTMLDivElement>(null);
 
   // ensure pageIndex is valid when pdf changes
@@ -124,34 +123,44 @@ const DetectFieldsStep: React.FC = () => {
 
   const handleMapSelected=(formFieldId:string)=>{
     if(selectedForMapping.size===0) return;
-    const mapped: MappedDetail[] = [];
-    pdfs.forEach(doc=>{
-      doc.formFields.forEach(f=>{
-        if(selectedForMapping.has(f.id)){
-          mapped.push({pdfFieldId:f.id,pdfName:doc.name,pageNumber:f.pageNumber,fieldName:f.name});
+    const targetFormField = formFields.find(f=>f.id===formFieldId);
+    if(!targetFormField) return;
+    selectedForMapping.forEach((pdfFieldId)=>{
+      let pdfFieldType:string|undefined;
+      for(const doc of pdfs){
+        const pf = doc.formFields.find(f=>f.id===pdfFieldId);
+        if(pf){ pdfFieldType = pf.type; break; }
+      }
+      if(pdfFieldType && pdfFieldType!==targetFormField.type){
+        // skip incompatible types
+        return;
+      }
+      addPdfFieldLink(pdfFieldId,formFieldId);
+      if(targetFormField.type==='radio'||targetFormField.type==='checkbox'){
+        const label = pdf.pages.flatMap(p=>p.formFields).find(f=>f.id===pdfFieldId)?.name || 'Option';
+        if(!targetFormField.options?.includes(label)){
+          updateFormField(formFieldId,{options:[...(targetFormField.options||[]),label]});
         }
-      })
+      }
     });
-    setFormFieldMappings(prev=>({
-      ...prev,
-      [formFieldId]:[...(prev[formFieldId]||[]),...mapped]
-    }));
     setSelectedForMapping(new Set());
   };
-
   const handleUnmap=(formFieldId:string,pdfFieldId:string)=>{
-    setFormFieldMappings(prev=>{
-      const list=prev[formFieldId]?.filter(m=>m.pdfFieldId!==pdfFieldId)||[];
-      return {...prev,[formFieldId]:list};
-    });
+    removePdfFieldLink(pdfFieldId,formFieldId);
   };
 
   const genId=()=>Math.random().toString(36).substr(2,9);
-  const addNewFormField=()=>{
-    addFormField({id:genId(),name:`form_field_${formFields.length+1}`,label:"",type:"text",required:false,order:formFields.length});
+  const addNewFormField=(fieldType:import("../../types").FormFieldType)=>{
+    addFormField({id:genId(),name:`form_field_${formFields.length+1}`,label:"",type:fieldType,required:false,order:formFields.length});
   };
   const renameFormField=(id:string,newName:string)=>{updateFormField(id,{name:newName,label:newName})};
-  const deleteFormField=(id:string)=>{removeFormField(id);setFormFieldMappings(prev=>{const copy={...prev};delete copy[id];return copy;});};
+  const deleteFormField=(id:string)=>{
+    removeFormField(id);
+    // purge links containing this form field
+    Object.entries(pdfFieldLinks).forEach(([pdfFieldId,formIds])=>{
+      if(formIds.includes(id)) removePdfFieldLink(pdfFieldId,id);
+    });
+  };
 
   const switchPdf = (doc: typeof pdf) => {
     // save current state for existing pdf
@@ -159,19 +168,30 @@ const DetectFieldsStep: React.FC = () => {
     // restore state if exists
     const saved = docStates[doc.id];
     setPageIndex(saved?.pageIndex ?? 0);
-    setZoom(saved?.zoom ?? 1);
+    setZoom(saved?.zoom ?? 0.75);
     setSelectedFieldId(saved?.selectedFieldId ?? null);
     selectPdf(doc);
   };
 
-  const mappedFieldIds=new Set<string>();
-  Object.values(formFieldMappings).forEach(list=>list.forEach(m=>mappedFieldIds.add(m.pdfFieldId)));
-  const mappingByPdfField: Record<string,string[]> = {};
-  Object.entries(formFieldMappings).forEach(([formFieldId,list])=>{
-    list.forEach(m=>{
-      if(!mappingByPdfField[m.pdfFieldId]) mappingByPdfField[m.pdfFieldId]=[];
-      mappingByPdfField[m.pdfFieldId].push(formFieldId);
-    });
+  const formFieldNameMap:Record<string,string>={}; formFields.forEach(f=>formFieldNameMap[f.id]=f.name);
+  const mappingByPdfField:Record<string,string[]>={};
+  Object.entries(pdfFieldLinks).forEach(([pdfFieldId,formIds])=>{
+    mappingByPdfField[pdfFieldId]=formIds.map(fid=>formFieldNameMap[fid]||fid);
+  });
+  const mappedFieldIds = new Set<string>(Object.keys(pdfFieldLinks));
+
+  // Build mapping details for FormFieldsPanel
+  const formFieldMappings: Record<string,MappedDetail[]> = {};
+  pdfs.forEach(doc=>{
+    doc.formFields.forEach(f=>{
+      const linkedFormIds = pdfFieldLinks[f.id];
+      if(linkedFormIds){
+        linkedFormIds.forEach(fid=>{
+          if(!formFieldMappings[fid]) formFieldMappings[fid]=[];
+          formFieldMappings[fid].push({pdfFieldId:f.id,pdfName:doc.name,pageNumber:f.pageNumber,fieldName:f.name});
+        });
+      }
+    })
   });
 
   return (
@@ -244,6 +264,7 @@ const DetectFieldsStep: React.FC = () => {
           onAddField={addNewFormField}
           onRename={renameFormField}
           onDelete={deleteFormField}
+          onUpdateField={(id,updates)=>updateFormField(id,updates)}
           mappings={formFieldMappings}
           onMapSelected={handleMapSelected}
           onUnmap={handleUnmap}

@@ -36,6 +36,11 @@ interface AppStore extends AppState {
   updateFieldMapping: (mappingId: string, updates: Partial<FieldMapping>) => void;
   removeFieldMapping: (mappingId: string) => void;
   
+  // Persistent mapping between PDF fields and form fields
+  pdfFieldLinks: Record<string, string[]>; // key: pdfFieldId, value: array of formFieldIds
+  addPdfFieldLink: (pdfFieldId: string, formFieldId: string) => void;
+  removePdfFieldLink: (pdfFieldId: string, formFieldId: string) => void;
+
   // Workflow Actions
   setCurrentStep: (step: number) => void;
   nextStep: () => void;
@@ -181,6 +186,21 @@ export const useAppStore = create<AppStore>()(
 
       removeFieldMapping: (mappingId) => set((state) => ({
         fieldMappings: state.fieldMappings.filter(mapping => mapping.id !== mappingId)
+      })),
+
+      // Persistent mapping between PDF fields and form fields
+      pdfFieldLinks: {}, // Initialize as empty
+      addPdfFieldLink: (pdfFieldId, formFieldId) => set((state) => ({
+        pdfFieldLinks: {
+          ...state.pdfFieldLinks,
+          [pdfFieldId]: [...(state.pdfFieldLinks[pdfFieldId] || []), formFieldId]
+        }
+      })),
+      removePdfFieldLink: (pdfFieldId, formFieldId) => set((state) => ({
+        pdfFieldLinks: {
+          ...state.pdfFieldLinks,
+          [pdfFieldId]: (state.pdfFieldLinks[pdfFieldId] || []).filter(id => id !== formFieldId)
+        }
       })),
 
       // Workflow Actions
