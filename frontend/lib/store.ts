@@ -8,10 +8,17 @@ import {
   FormField, 
   FieldMapping, 
   WorkflowStep,
-  PDFFormField 
+  PDFFormField,
+  UserRole,
+  User,
+  WORKFLOW_CONFIG
 } from '../types';
 
 interface AppStore extends AppState {
+  // User Authentication
+  user: User | null;
+  userRole: UserRole | null;
+  
   // PDF Management Actions
   addPdf: (pdf: PDFDocument) => void;
   removePdf: (pdfId: string) => void;
@@ -43,6 +50,11 @@ interface AppStore extends AppState {
   setLoading: (loading: boolean) => void;
   setError: (error: string | null) => void;
   clearError: () => void;
+  
+  // User Actions
+  setUser: (user: User | null) => void;
+  setUserRole: (role: UserRole | null) => void;
+  logout: () => void;
 }
 
 const generateId = () => Math.random().toString(36).substr(2, 9);
@@ -51,15 +63,55 @@ export const useAppStore = create<AppStore>()(
   devtools(
     (set, get) => ({
       // Initial State
+      user: null,
+      userRole: null,
       pdfs: [],
       selectedPdf: null,
       formFields: [],
       fieldMappings: [],
-      currentStep: WorkflowStep.UPLOAD_PDF,
-      totalSteps: Object.keys(WorkflowStep).length / 2, // Divide by 2 because enum has both keys and values
+      currentStep: 0, // Will be set based on user role
+      totalSteps: 0, // Will be set based on user role
       formData: {},
       isLoading: false,
       error: null,
+
+      // User Actions
+      setUser: (user) => {
+        const role = user?.role || null;
+        const workflowConfig = role ? WORKFLOW_CONFIG[role] : null;
+        const totalSteps = workflowConfig ? workflowConfig.steps.length : 0;
+        
+        set({
+          user,
+          userRole: role,
+          currentStep: 0,
+          totalSteps,
+          formData: {},
+          error: null
+        });
+      },
+
+      setUserRole: (role) => {
+        const workflowConfig = role ? WORKFLOW_CONFIG[role] : null;
+        const totalSteps = workflowConfig ? workflowConfig.steps.length : 0;
+        
+        set({
+          userRole: role,
+          currentStep: 0,
+          totalSteps,
+          formData: {},
+          error: null
+        });
+      },
+
+      logout: () => set({
+        user: null,
+        userRole: null,
+        currentStep: 0,
+        totalSteps: 0,
+        formData: {},
+        error: null
+      }),
 
       // PDF Management Actions
       addPdf: (pdf) => set((state) => ({
@@ -142,11 +194,11 @@ export const useAppStore = create<AppStore>()(
         currentStep: Math.max(state.currentStep - 1, 0)
       })),
 
-      resetWorkflow: () => set({
-        currentStep: WorkflowStep.UPLOAD_PDF,
+      resetWorkflow: () => set((state) => ({
+        currentStep: 0,
         formData: {},
         error: null
-      }),
+      })),
 
       // Form Data Actions
       updateFormData: (fieldId, value) => set((state) => ({
@@ -169,6 +221,8 @@ export const useAppStore = create<AppStore>()(
 );
 
 // Selector hooks for better performance
+export const useUser = () => useAppStore((state) => state.user);
+export const useUserRole = () => useAppStore((state) => state.userRole);
 export const usePdfs = () => useAppStore((state) => state.pdfs);
 export const useSelectedPdf = () => useAppStore((state) => state.selectedPdf);
 export const useFormFields = () => useAppStore((state) => state.formFields);

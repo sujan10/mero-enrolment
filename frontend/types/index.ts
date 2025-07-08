@@ -7,6 +7,8 @@ export interface PDFDocument {
   pages: PDFPage[];
   formFields: PDFFormField[];
   createdAt: Date;
+  originalName?: string;
+  originalType?: string;
 }
 
 export interface PDFPage {
@@ -85,15 +87,68 @@ export interface AppState {
   error: string | null;
 }
 
-// Step Types
-export enum WorkflowStep {
-  UPLOAD_PDF = 0,
-  DETECT_FIELDS = 1,
-  BUILD_FORM = 2,
-  MAP_FIELDS = 3,
-  PREVIEW_TEST = 4,
-  GENERATE_PDF = 5
+// User Role Types
+export type UserRole = 'client' | 'admin' | 'owner';
+
+export interface User {
+  id: string;
+  email: string;
+  role: UserRole;
+  status: 'active' | 'inactive' | 'pending';
+  createdAt: Date;
+  createdBy?: string; // For tracking who created this user
 }
+
+// Step Types - Role-based workflows
+export enum WorkflowStep {
+  // Client Workflow (End User)
+  CLIENT_FILL_FORM = 0,
+  CLIENT_REVIEW_DATA = 1,
+  CLIENT_SUBMIT = 2,
+
+  // Admin Workflow (Form Builder)
+  ADMIN_UPLOAD_PDF = 0,
+  ADMIN_DETECT_FIELDS = 1,
+  ADMIN_BUILD_FORM = 2,
+  ADMIN_MAP_FIELDS = 3,
+  ADMIN_PREVIEW_TEST = 4,
+  ADMIN_PUBLISH_FORM = 5,
+
+  // Owner Workflow (System Management)
+  OWNER_DASHBOARD = 0,
+  OWNER_MANAGE_ADMINS = 1,
+  OWNER_MONITOR_LOGS = 2,
+  OWNER_SYSTEM_SETTINGS = 3
+}
+
+// Role-specific workflow configurations
+export const WORKFLOW_CONFIG = {
+  client: {
+    steps: [
+      { id: WorkflowStep.CLIENT_FILL_FORM, title: 'Fill Form', description: 'Complete the form with your information' },
+      { id: WorkflowStep.CLIENT_REVIEW_DATA, title: 'Review Data', description: 'Review your information before submission' },
+      { id: WorkflowStep.CLIENT_SUBMIT, title: 'Submit', description: 'Submit your completed form' }
+    ]
+  },
+  admin: {
+    steps: [
+      { id: WorkflowStep.ADMIN_UPLOAD_PDF, title: 'Upload PDF', description: 'Upload your PDF documents' },
+      { id: WorkflowStep.ADMIN_DETECT_FIELDS, title: 'Detect Fields', description: 'Review and edit detected form fields' },
+      { id: WorkflowStep.ADMIN_BUILD_FORM, title: 'Build Form', description: 'Create your web form' },
+      { id: WorkflowStep.ADMIN_MAP_FIELDS, title: 'Map Fields', description: 'Connect form fields to PDF fields' },
+      { id: WorkflowStep.ADMIN_PREVIEW_TEST, title: 'Preview & Test', description: 'Test the form before publishing' },
+      { id: WorkflowStep.ADMIN_PUBLISH_FORM, title: 'Publish Form', description: 'Make the form available to clients' }
+    ]
+  },
+  owner: {
+    steps: [
+      { id: WorkflowStep.OWNER_DASHBOARD, title: 'Dashboard', description: 'System overview and analytics' },
+      { id: WorkflowStep.OWNER_MANAGE_ADMINS, title: 'Manage Admins', description: 'Create and manage admin users' },
+      { id: WorkflowStep.OWNER_MONITOR_LOGS, title: 'Monitor Logs', description: 'View system activity and logs' },
+      { id: WorkflowStep.OWNER_SYSTEM_SETTINGS, title: 'System Settings', description: 'Configure system-wide settings' }
+    ]
+  }
+} as const;
 
 // API Response Types
 export interface APIResponse<T> {
