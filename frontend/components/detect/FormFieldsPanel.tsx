@@ -5,6 +5,7 @@ import { Input } from "../ui/input";
 import { ChevronDown, ChevronRight, Trash, Link2, X } from "lucide-react";
 
 interface MappedDetail {
+  pdfFieldId:string;
   pdfName:string;
   pageNumber:number;
   fieldName:string;
