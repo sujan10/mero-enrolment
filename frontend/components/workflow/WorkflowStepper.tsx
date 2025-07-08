@@ -28,6 +28,7 @@ import { useAppStore, useUser, useUserRole, useCurrentStep } from '../../lib/sto
 import { WorkflowStep, WORKFLOW_CONFIG, UserRole } from '../../types';
 import PdfUploader from '../pdf/PdfUploader';
 import dynamic from 'next/dynamic';
+const WarnOnNavigate = dynamic(() => import("../common/WarnOnNavigate"), { ssr: false });
 
 const DetectFieldsStep = dynamic(() => import('../detect/DetectFieldsStep'), {
   ssr: false,
@@ -220,106 +221,109 @@ const WorkflowStepper: React.FC = () => {
   const disableNext = isDetectFieldsStep && !detectStepHasFields;
 
   return (
-    <div className="max-w-7xl mx-auto p-6">
-      {/* Header with user info and logout */}
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-4">
-          <h1 className="text-2xl font-bold text-gray-900">PDF Form Automation</h1>
-          <Badge className={getRoleColor(userRole)}>
-            {getRoleIcon(userRole)}
-            <span className="ml-1 capitalize">{userRole}</span>
-          </Badge>
-        </div>
-        <Button variant="outline" onClick={logout} className="flex items-center gap-2">
-          <LogOut className="h-4 w-4" />
-          Logout
-        </Button>
-      </div>
-
-      {/* Workflow Steps */}
-      <Card className="mb-6">
-        {roleTitle && (
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+    <>
+      <WarnOnNavigate />
+      <div className="max-w-7xl mx-auto p-6">
+        {/* Header with user info and logout */}
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-4">
+            <h1 className="text-2xl font-bold text-gray-900">PDF Form Automation</h1>
+            <Badge className={getRoleColor(userRole)}>
               {getRoleIcon(userRole)}
-              {roleTitle}
-            </CardTitle>
-          </CardHeader>
-        )}
-        <CardContent className={`${!roleTitle ? 'py-4' : ''}`}>
-          <div className="flex items-center justify-between">
-            {workflowConfig.steps.map((step, index) => {
-              const status = getStepStatus(index);
-              const Icon = step.id === currentStep ? CheckCircle : Circle;
-              
-              return (
-                <div key={step.id} className="flex items-center">
-                  <button
-                    type="button"
-                    className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors pointer-events-none ${
-                      status === 'completed' 
-                        ? 'bg-green-100 text-green-700' 
-                        : status === 'current'
-                        ? 'bg-blue-100 text-blue-700'
-                        : 'bg-gray-100 text-gray-400'
-                    }`}
-                  >
-                    <Icon className="h-4 w-4" />
-                    <span className="text-sm font-medium">{step.title}</span>
-                  </button>
-                  {index < workflowConfig.steps.length - 1 && (
-                    <div className="w-8 h-0.5 bg-gray-300 mx-2" />
-                  )}
-                </div>
-              );
-            })}
+              <span className="ml-1 capitalize">{userRole}</span>
+            </Badge>
           </div>
-        </CardContent>
-      </Card>
+          <Button variant="outline" onClick={logout} className="flex items-center gap-2">
+            <LogOut className="h-4 w-4" />
+            Logout
+          </Button>
+        </div>
 
-      {/* Current Step Content */}
-      <Card>
-        {/* Hide header for Upload PDF step */}
-        {!(currentStepConfig.title==='Upload PDF' || currentStepConfig.title==='Detect Fields') && (
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              {currentStepConfig.title}
-            </CardTitle>
-            <p className="text-gray-600">{currentStepConfig.description}</p>
-          </CardHeader>
-        )}
-        <CardContent className={currentStepConfig.title==='Upload PDF'||currentStepConfig.title==='Detect Fields'?'pt-6':'pt-0'}>
-          {CurrentComponent ? <CurrentComponent /> : (
-            <div className="text-center py-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-4"></div>
-              <p className="text-gray-600">Loading component...</p>
-            </div>
+        {/* Workflow Steps */}
+        <Card className="mb-6">
+          {roleTitle && (
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                {getRoleIcon(userRole)}
+                {roleTitle}
+              </CardTitle>
+            </CardHeader>
           )}
-        </CardContent>
-      </Card>
+          <CardContent className={`${!roleTitle ? 'py-4' : ''}`}>
+            <div className="flex items-center justify-between">
+              {workflowConfig.steps.map((step, index) => {
+                const status = getStepStatus(index);
+                const Icon = step.id === currentStep ? CheckCircle : Circle;
+                
+                return (
+                  <div key={step.id} className="flex items-center">
+                    <button
+                      type="button"
+                      className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors pointer-events-none ${
+                        status === 'completed' 
+                          ? 'bg-green-100 text-green-700' 
+                          : status === 'current'
+                          ? 'bg-blue-100 text-blue-700'
+                          : 'bg-gray-100 text-gray-400'
+                      }`}
+                    >
+                      <Icon className="h-4 w-4" />
+                      <span className="text-sm font-medium">{step.title}</span>
+                    </button>
+                    {index < workflowConfig.steps.length - 1 && (
+                      <div className="w-8 h-0.5 bg-gray-300 mx-2" />
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
 
-      {/* Navigation */}
-      <div className="flex justify-between mt-6">
-        <Button
-          onClick={previousStep}
-          disabled={currentStep === 0}
-          variant="outline"
-          className="flex items-center gap-2"
-        >
-          <ChevronLeft className="h-4 w-4" />
-          Previous
-        </Button>
-        
-        <Button
-          onClick={nextStep}
-          disabled={currentStep === totalSteps - 1 || disableNext}
-          className="flex items-center gap-2"
-        >
-          Next
-          <ChevronRight className="h-4 w-4" />
-        </Button>
+        {/* Current Step Content */}
+        <Card>
+          {/* Hide header for Upload PDF step */}
+          {!(currentStepConfig.title==='Upload PDF' || currentStepConfig.title==='Detect Fields') && (
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                {currentStepConfig.title}
+              </CardTitle>
+              <p className="text-gray-600">{currentStepConfig.description}</p>
+            </CardHeader>
+          )}
+          <CardContent className={currentStepConfig.title==='Upload PDF'||currentStepConfig.title==='Detect Fields'?'pt-6':'pt-0'}>
+            {CurrentComponent ? <CurrentComponent /> : (
+              <div className="text-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-4"></div>
+                <p className="text-gray-600">Loading component...</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Navigation */}
+        <div className="flex justify-between mt-6">
+          <Button
+            onClick={previousStep}
+            disabled={currentStep === 0}
+            variant="outline"
+            className="flex items-center gap-2"
+          >
+            <ChevronLeft className="h-4 w-4" />
+            Previous
+          </Button>
+          
+          <Button
+            onClick={nextStep}
+            disabled={currentStep === totalSteps - 1 || disableNext}
+            className="flex items-center gap-2"
+          >
+            Next
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+        </div>
       </div>
-    </div>
+    </>
   );
 };
 
