@@ -4,9 +4,15 @@ import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
 import { PDFDocument } from 'pdf-lib';
+import jwt from 'jsonwebtoken';
+import { initUserDb, createUser, findUserByEmail, updateUserStatus, updateUserPassword } from './user';
+const JWT_SECRET = process.env.JWT_SECRET || 'supersecret';
 
 const app = express();
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 3001;
+
+// Initialize user DB
+initUserDb();
 
 // CORS configuration
 app.use(cors({
@@ -39,12 +45,98 @@ const upload = multer({
     fileSize: 10 * 1024 * 1024, // 10MB limit
   },
   fileFilter: (req, file, cb) => {
-    if (file.mimetype === 'application/pdf') {
+    // Allow PDFs and images (JPG, PNG)
+    const allowedMimeTypes = [
+      'application/pdf',
+      'image/jpeg',
+      'image/jpg',
+      'image/png'
+    ];
+    
+    if (allowedMimeTypes.includes(file.mimetype)) {
       cb(null, true);
     } else {
-      cb(new Error('Only PDF files are allowed'));
+      cb(new Error('Only PDF, JPG, and PNG files are allowed'));
     }
   }
+});
+
+// Auth middleware
+function authMiddleware(req: Request, res: Response, next: NextFunction) {
+  const authHeader = req.headers.authorization;
+  if (!authHeader) return res.status(401).json({ error: 'Missing auth token' });
+  const token = authHeader.split(' ')[1];
+  try {
+    const user = jwt.verify(token, JWT_SECRET);
+    (req as any).user = user;
+    next();
+  } catch {
+    res.status(401).json({ error: 'Invalid or expired token' });
+  }
+}
+
+// Register endpoint
+app.post('/api/register', async (req: Request, res: Response) => {
+  const { email, password } = req.body;
+  if (!email || !password) {
+    res.status(400).json({ error: 'Email and password required' });
+    return;
+  }
+  try {
+    await createUser(email, password);
+    res.json({ success: true });
+  } catch (e) {
+    res.status(400).json({ error: 'User already exists' });
+  }
+});
+
+// Login endpoint
+app.post('/api/login', async (req: Request, res: Response) => {
+  const { email, password } = req.body;
+  if (!email || !password) {
+    res.status(400).json({ error: 'Email and password required' });
+    return;
+  }
+  const user = await findUserByEmail(email);
+  if (!user) {
+    res.status(401).json({ error: 'Invalid credentials' });
+    return;
+  }
+  const valid = await require('bcrypt').compare(password, user.password);
+  if (!valid) {
+    res.status(401).json({ error: 'Invalid credentials' });
+    return;
+  }
+  const token = jwt.sign({ email: user.email, role: user.role, status: user.status }, JWT_SECRET, { expiresIn: '7d' });
+  res.json({ token });
+});
+
+// Invite endpoint (admin only)
+app.post('/api/invite', authMiddleware, async (req: Request, res: Response) => {
+  const { email, tempPassword, role } = req.body;
+  const user = (req as any).user;
+  if (user.role !== 'admin') {
+    res.status(403).json({ error: 'Forbidden' });
+    return;
+  }
+  try {
+    await createUser(email, tempPassword, role || 'user');
+    // TODO: Send invite email with tempPassword
+    res.json({ success: true });
+  } catch (e) {
+    res.status(400).json({ error: 'User already exists' });
+  }
+});
+
+// Reset password endpoint
+app.post('/api/reset-password', async (req: Request, res: Response) => {
+  const { email, newPassword } = req.body;
+  if (!email || !newPassword) {
+    res.status(400).json({ error: 'Email and new password required' });
+    return;
+  }
+  await updateUserPassword(email, newPassword);
+  res.json({ success: true });
 });
 
 // Health check endpoint
@@ -53,7 +145,7 @@ app.get('/health', (req: Request, res: Response) => {
 });
 
 // PDF upload endpoint
-app.post('/api/upload-pdf', upload.single('pdf'), async (req: Request, res: Response) => {
+app.post('/api/upload-pdf', authMiddleware, upload.single('pdf'), async (req: Request, res: Response) => {
   try {
     if (!req.file) {
       res.status(400).json({ error: 'No PDF file uploaded' });
@@ -97,7 +189,7 @@ app.post('/api/upload-pdf', upload.single('pdf'), async (req: Request, res: Resp
 });
 
 // PDF generation endpoint
-app.post('/api/generate-pdf', async (req: Request, res: Response) => {
+app.post('/api/generate-pdf', authMiddleware, async (req: Request, res: Response) => {
   try {
     const { pdfId, formData, fieldMappings } = req.body;
 
@@ -159,7 +251,7 @@ app.post('/api/generate-pdf', async (req: Request, res: Response) => {
 });
 
 // PDF download endpoint
-app.get('/api/download/:filename', (req: Request, res: Response) => {
+app.get('/api/download/:filename', authMiddleware, (req: Request, res: Response) => {
   try {
     const { filename } = req.params;
     const filePath = path.join(__dirname, '../uploads', filename);
@@ -219,6 +311,12 @@ app.use((error: any, req: Request, res: Response, next: NextFunction) => {
       res.status(400).json({ error: 'File too large. Maximum size is 10MB.' });
       return;
     }
+  }
+  
+  // Handle file type errors
+  if (error.message === 'Only PDF files are allowed') {
+    res.status(400).json({ error: 'Only PDF files are allowed' });
+    return;
   }
   
   res.status(500).json({ error: 'Internal server error' });
