@@ -1,3 +1,6 @@
+---
+alwaysApply: true
+---
 # Cursor Rules for Mero Enrolment Project
 
 ## Project Vision & Core Purpose
@@ -35,22 +38,6 @@ This is a Next.js 14+ project with TypeScript, using:
 - Backend: Node.js/TypeScript server
 - PDF handling: react-pdf for client-side PDF viewing and manipulation
 - PDF form filling: pdf-lib for programmatic PDF field filling
-
-## Development Server Management
-
-### Server Locations
-- **Main Directory**: No development servers or scripts available - this is a workspace root only
-- **Backend Server**: Only available in the `backend/` directory
-- **Frontend Server**: Only available in the `frontend/` directory
-
-### Running Development Servers
-- **Backend**: `cd backend && npm run dev` (runs on port 3001)
-- **Frontend**: `cd frontend && npm run dev` (runs on port 3000)
-- **Never run `npm run dev` from the project root** - it will fail as there's no dev script
-
-### Docker Services
-- Use `docker-compose up` from the project root to start backend and Redis services
-- Frontend should be run separately with `cd frontend && npm run dev`
 
 ## General Code Standards
 
@@ -117,15 +104,14 @@ This is a Next.js 14+ project with TypeScript, using:
 
 ## Code Review Checklist
 Before suggesting code, ensure:
-1. ✅ All imports are properly defined before using components/functions
-2. ✅ Proper TypeScript types are used
-3. ✅ "use client" directive is present if needed
-4. ✅ Error handling is implemented
-5. ✅ Loading states are considered
-6. ✅ Component follows project naming conventions
-7. ✅ Tailwind classes are used appropriately
-8. ✅ Code is readable and well-commented
-9. ✅ No security vulnerabilities are introduced
+1. ✅ Proper TypeScript types are used
+2. ✅ "use client" directive is present if needed
+3. ✅ Error handling is implemented
+4. ✅ Loading states are considered
+5. ✅ Component follows project naming conventions
+6. ✅ Tailwind classes are used appropriately
+7. ✅ Code is readable and well-commented
+8. ✅ No security vulnerabilities are introduced
 
 ## Common Patterns to Follow
 - Use destructuring for props and state
@@ -155,5 +141,3 @@ Before suggesting code, ensure:
 - ❌ Ignoring repeated field scenarios across multiple PDF pages
 - ❌ Missing preview functionality before PDF generation
 - ❌ Poor error handling for PDF parsing and field detection
-- ❌ Running `npm run dev` from the project root (no dev script exists)
-- ❌ Confusing backend and frontend server locations 

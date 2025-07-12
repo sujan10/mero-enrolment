@@ -121,28 +121,47 @@ const MapFieldsStep: React.FC = () => {
       <DocumentCarousel documents={pdfs} activeId={pdf.id} onSelect={switchPdf} />
 
       {/* Controls bar */}
-      <div className="flex items-center justify-between bg-slate-100/90 px-3 py-2 rounded shadow mb-2">
-        <div className="flex items-center gap-4">
-          <Button variant="outline" size="icon" disabled={pageIndex===0} onClick={()=>setPageIndex(pageIndex-1)}>◀</Button>
-          <span className="text-sm whitespace-nowrap">Page {pageIndex+1} / {pdf.pages.length}</span>
-          <Button variant="outline" size="icon" disabled={pageIndex===pdf.pages.length-1} onClick={()=>setPageIndex(pageIndex+1)}>▶</Button>
-          <div className="ml-4 flex items-center gap-2">
-            <Button variant="outline" size="icon" onClick={()=>setZoom(Math.max(0.5,zoom-0.25))}>−</Button>
-            <span className="text-sm w-10 text-center">{Math.round(zoom*100)}%</span>
-            <Button variant="outline" size="icon" onClick={()=>setZoom(Math.min(2,zoom+0.25))}>＋</Button>
+      <div className="flex flex-col sm:flex-row items-center justify-between bg-slate-100/90 px-2 sm:px-3 py-2 rounded shadow mb-2 gap-2">
+        <div className="flex items-center gap-1 sm:gap-2 lg:gap-4 overflow-x-auto">
+          <Button variant="outline" size="icon" disabled={pageIndex===0} onClick={()=>setPageIndex(pageIndex-1)} className="h-8 w-8">◀</Button>
+          <span className="text-xs sm:text-sm whitespace-nowrap">Page {pageIndex+1} / {pdf.pages.length}</span>
+          <Button variant="outline" size="icon" disabled={pageIndex===pdf.pages.length-1} onClick={()=>setPageIndex(pageIndex+1)} className="h-8 w-8">▶</Button>
+          <div className="ml-2 sm:ml-4 flex items-center gap-1 sm:gap-2">
+            <Button variant="outline" size="icon" onClick={()=>setZoom(Math.max(0.5,zoom-0.25))} className="h-8 w-8">−</Button>
+            <span className="text-xs sm:text-sm w-8 sm:w-10 text-center">{Math.round(zoom*100)}%</span>
+            <Button variant="outline" size="icon" onClick={()=>setZoom(Math.min(2,zoom+0.25))} className="h-8 w-8">＋</Button>
           </div>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button size="sm" variant="outline" onClick={()=>{/* future smart auto map */}}>
-            <Wand2 className="h-4 w-4 mr-1"/> Auto-Map Names
+          <div className="border-l border-gray-300 mx-1 sm:mx-2 h-6"></div>
+          <Button 
+            variant="outline" 
+            size="icon" 
+            onClick={() => {
+              // Fit to page horizontally
+              const container = document.querySelector('.relative.border.rounded.bg-gray-100');
+              if (container) {
+                const containerWidth = container.clientWidth;
+                const pageWidth = pdf.pages[pageIndex]?.width || 600;
+                const newZoom = (containerWidth - 40) / pageWidth;
+                setZoom(Math.min(2, Math.max(0.5, newZoom)));
+              }
+            }}
+            title="Fit to page horizontally"
+            className="h-8 w-8"
+          >
+            ⇄
           </Button>
-          <Button size="sm" variant="destructive" onClick={clearAllMappings}>
-            <Trash2 className="h-4 w-4 mr-1"/> Clear Mappings
+        </div>
+        <div className="flex items-center gap-1 sm:gap-2">
+          <Button size="sm" variant="outline" onClick={()=>{/* future smart auto map */}} className="text-xs">
+            <Wand2 className="h-4 w-4 mr-1"/> <span className="hidden sm:inline">Auto-Map Names</span>
+          </Button>
+          <Button size="sm" variant="destructive" onClick={clearAllMappings} className="text-xs">
+            <Trash2 className="h-4 w-4 mr-1"/> <span className="hidden sm:inline">Clear Mappings</span>
           </Button>
         </div>
       </div>
 
-      <div className="flex gap-4">
+      <div className="flex flex-col lg:flex-row gap-2 lg:gap-4 min-w-0">
         {/* PDF viewer */}
         <div className="flex-1 min-w-0">
           <div className="relative border rounded bg-gray-100">

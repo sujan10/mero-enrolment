@@ -228,34 +228,34 @@ const WorkflowStepper: React.FC = () => {
   return (
     <>
       <WarnOnNavigate />
-      <div className="max-w-7xl mx-auto p-6">
+      <div className="max-w-full mx-auto p-2 sm:p-4 lg:p-6 h-screen flex flex-col overflow-hidden">
         {/* Header with user info and logout */}
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-4">
-            <h1 className="text-2xl font-bold text-gray-900">PDF Form Automation</h1>
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 sm:mb-6 gap-2">
+          <div className="flex items-center gap-2 sm:gap-4">
+            <h1 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900">PDF Form Automation</h1>
             <Badge className={getRoleColor(userRole)}>
               {getRoleIcon(userRole)}
               <span className="ml-1 capitalize">{userRole}</span>
             </Badge>
           </div>
-          <Button variant="outline" onClick={logout} className="flex items-center gap-2">
+          <Button variant="outline" onClick={logout} className="flex items-center gap-2 text-sm">
             <LogOut className="h-4 w-4" />
-            Logout
+            <span className="hidden sm:inline">Logout</span>
           </Button>
         </div>
 
         {/* Workflow Steps */}
-        <Card className="mb-6">
+        <Card className="mb-4 sm:mb-6">
           {roleTitle && (
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
+            <CardHeader className="pb-2 sm:pb-6">
+              <CardTitle className="flex items-center gap-2 text-sm sm:text-base">
                 {getRoleIcon(userRole)}
                 {roleTitle}
               </CardTitle>
             </CardHeader>
           )}
-          <CardContent className={`${!roleTitle ? 'py-4' : ''}`}>
-            <div className="flex items-center justify-between">
+          <CardContent className={`${!roleTitle ? 'py-2 sm:py-4' : ''}`}>
+            <div className="flex flex-wrap items-center justify-center gap-1 sm:gap-2">
               {workflowConfig.steps.map((step, index) => {
                 const status = getStepStatus(index);
                 const Icon = step.id === currentStep ? CheckCircle : Circle;
@@ -264,7 +264,7 @@ const WorkflowStepper: React.FC = () => {
                   <div key={step.id} className="flex items-center">
                     <button
                       type="button"
-                      className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors pointer-events-none ${
+                      className={`flex items-center gap-1 sm:gap-2 px-1 sm:px-2 py-1 sm:py-2 rounded-lg transition-colors pointer-events-none text-xs ${
                         status === 'completed' 
                           ? 'bg-green-100 text-green-700' 
                           : status === 'current'
@@ -272,11 +272,12 @@ const WorkflowStepper: React.FC = () => {
                           : 'bg-gray-100 text-gray-400'
                       }`}
                     >
-                      <Icon className="h-4 w-4" />
-                      <span className="text-sm font-medium">{step.title}</span>
+                      <Icon className="h-3 w-3" />
+                      <span className="font-medium hidden sm:inline">{step.title}</span>
+                      <span className="font-medium sm:hidden">{step.title.split(' ')[0]}</span>
                     </button>
                     {index < workflowConfig.steps.length - 1 && (
-                      <div className="w-8 h-0.5 bg-gray-300 mx-2" />
+                      <div className="w-2 sm:w-4 lg:w-8 h-0.5 bg-gray-300 mx-0.5 sm:mx-1 lg:mx-2" />
                     )}
                   </div>
                 );
@@ -285,8 +286,30 @@ const WorkflowStepper: React.FC = () => {
           </CardContent>
         </Card>
 
+        {/* Navigation */}
+        <div className="flex justify-between mt-4 sm:mt-6 gap-2">
+          <Button
+            onClick={previousStep}
+            disabled={currentStep === 0}
+            variant="outline"
+            className="flex items-center gap-1 sm:gap-2 text-sm w-24 justify-center bg-red-50 hover:bg-red-100 text-red-700 border-red-200 hover:border-red-300"
+          >
+            <ChevronLeft className="h-4 w-4" />
+            <span className="hidden sm:inline">Previous</span>
+          </Button>
+          
+          <Button
+            onClick={nextStep}
+            disabled={currentStep === totalSteps - 1 || disableNext}
+            className="flex items-center gap-1 sm:gap-2 text-sm w-24 justify-center bg-green-600 hover:bg-green-700 text-white border-green-600 hover:border-green-700"
+          >
+            <span className="hidden sm:inline">Next</span>
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+        </div>
+
         {/* Current Step Content */}
-        <Card>
+        <Card className="mt-3 flex-1 overflow-hidden flex flex-col">
           {/* Hide header for steps where we omit title/subtitle */}
           {!( ['Upload PDF','Detect Fields','Build Form','Map Fields','Preview & Test','Publish Form'].includes(currentStepConfig.title) ) && (
             <CardHeader>
@@ -296,7 +319,7 @@ const WorkflowStepper: React.FC = () => {
               <p className="text-gray-600">{currentStepConfig.description}</p>
             </CardHeader>
           )}
-          <CardContent className={['Upload PDF','Detect Fields','Build Form','Map Fields','Preview & Test','Publish Form'].includes(currentStepConfig.title)?'pt-6':'pt-0'}>
+          <CardContent className={`${['Upload PDF','Detect Fields','Build Form','Map Fields','Preview & Test','Publish Form'].includes(currentStepConfig.title)?'pt-6':'pt-0'} flex-1 overflow-auto`}>
             {CurrentComponent ? <CurrentComponent /> : (
               <div className="text-center py-8">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-4"></div>
@@ -305,28 +328,6 @@ const WorkflowStepper: React.FC = () => {
             )}
           </CardContent>
         </Card>
-
-        {/* Navigation */}
-        <div className="flex justify-between mt-6">
-          <Button
-            onClick={previousStep}
-            disabled={currentStep === 0}
-            variant="outline"
-            className="flex items-center gap-2"
-          >
-            <ChevronLeft className="h-4 w-4" />
-            Previous
-          </Button>
-          
-          <Button
-            onClick={nextStep}
-            disabled={currentStep === totalSteps - 1 || disableNext}
-            className="flex items-center gap-2"
-          >
-            Next
-            <ChevronRight className="h-4 w-4" />
-          </Button>
-        </div>
       </div>
     </>
   );

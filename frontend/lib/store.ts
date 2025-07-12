@@ -132,16 +132,33 @@ export const useAppStore = create<AppStore>()(
 
       selectPdf: (pdf) => set({ selectedPdf: pdf }),
 
-      updatePdfFields: (pdfId, fields) => set((state) => ({
-        pdfs: state.pdfs.map(pdf => 
-          pdf.id === pdfId 
-            ? { ...pdf, formFields: fields }
-            : pdf
-        ),
-        selectedPdf: state.selectedPdf?.id === pdfId 
-          ? { ...state.selectedPdf, formFields: fields }
-          : state.selectedPdf
-      })),
+      updatePdfFields: (pdfId, fields) => set((state) => {
+        // Get the old PDF to find deleted fields
+        const oldPdf = state.pdfs.find(pdf => pdf.id === pdfId);
+        const oldFieldIds = oldPdf ? new Set(oldPdf.formFields.map(f => f.id)) : new Set();
+        const newFieldIds = new Set(fields.map(f => f.id));
+        
+        // Find deleted field IDs
+        const deletedFieldIds = Array.from(oldFieldIds).filter(id => !newFieldIds.has(id));
+        
+        // Clean up pdfFieldLinks for deleted PDF fields
+        const updatedPdfFieldLinks = { ...state.pdfFieldLinks };
+        deletedFieldIds.forEach(deletedFieldId => {
+          delete updatedPdfFieldLinks[deletedFieldId];
+        });
+        
+        return {
+          pdfs: state.pdfs.map(pdf => 
+            pdf.id === pdfId 
+              ? { ...pdf, formFields: fields }
+              : pdf
+          ),
+          selectedPdf: state.selectedPdf?.id === pdfId 
+            ? { ...state.selectedPdf, formFields: fields }
+            : state.selectedPdf,
+          pdfFieldLinks: updatedPdfFieldLinks
+        };
+      }),
 
       // Form Building Actions
       addFormField: (field) => set((state) => ({
@@ -154,10 +171,23 @@ export const useAppStore = create<AppStore>()(
         )
       })),
 
-      removeFormField: (id) => set((state) => ({
-        formFields: state.formFields.filter(field => field.id !== id),
-        fieldMappings: state.fieldMappings.filter(mapping => mapping.formFieldId !== id)
-      })),
+      removeFormField: (id) => set((state) => {
+        // Clean up pdfFieldLinks that reference this form field
+        const updatedPdfFieldLinks = { ...state.pdfFieldLinks };
+        Object.keys(updatedPdfFieldLinks).forEach(pdfFieldId => {
+          updatedPdfFieldLinks[pdfFieldId] = updatedPdfFieldLinks[pdfFieldId].filter(formFieldId => formFieldId !== id);
+          // Remove empty arrays
+          if (updatedPdfFieldLinks[pdfFieldId].length === 0) {
+            delete updatedPdfFieldLinks[pdfFieldId];
+          }
+        });
+        
+        return {
+          formFields: state.formFields.filter(field => field.id !== id),
+          fieldMappings: state.fieldMappings.filter(mapping => mapping.formFieldId !== id),
+          pdfFieldLinks: updatedPdfFieldLinks
+        };
+      }),
 
       reorderFormFields: (fromIndex, toIndex) => set((state) => {
         const newFields = [...state.formFields];
