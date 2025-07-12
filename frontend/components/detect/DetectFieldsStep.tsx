@@ -4,7 +4,7 @@ import React, { useState, useRef } from "react";
 import toast from 'react-hot-toast';
 import PdfFieldViewer from "./PdfFieldViewer";
 import { Button } from "../ui/button";
-import FieldListPanel from "./FieldListPanel";
+import FieldListPanel, { FieldListPanelRef } from "./FieldListPanel";
 import FormFieldsPanel from "./FormFieldsPanel";
 import { useAppStore } from "../../lib/store";
 import { PDFFormField, FormField } from "../../types";
@@ -37,6 +37,7 @@ const DetectFieldsStep: React.FC = () => {
     onConfirm: () => void;
   }>({ open: false, title: "", message: "", onConfirm: () => {} });
   const carouselRef = useRef<HTMLDivElement>(null);
+  const fieldListRef = useRef<FieldListPanelRef>(null);
 
   // ensure pageIndex is valid when pdf changes
   React.useEffect(()=>{
@@ -117,6 +118,12 @@ const DetectFieldsStep: React.FC = () => {
   const handleResizeField = (fieldId:string,newW:number,newH:number)=>{
     const updated = pdf.formFields.map(f=>f.id===fieldId?{...f,width:newW,height:newH}:f);
     updatePdfFields(pdf.id, updated);
+  };
+
+  const handleFieldSelect = (field: PDFFormField) => {
+    setSelectedFieldId(field.id);
+    // Scroll to the field in the list
+    fieldListRef.current?.scrollToField(field.id);
   };
 
   const handleAddField = (newField: PDFFormField) => {
@@ -366,7 +373,7 @@ const DetectFieldsStep: React.FC = () => {
               key={pdf.id}
               pdf={pdf}
               selectedFieldId={selectedFieldId}
-              onFieldSelect={(f) => setSelectedFieldId(f.id)}
+              onFieldSelect={handleFieldSelect}
               pageWidth={650}
               drawingMode={addMode}
               onAddField={handleAddField}
@@ -381,6 +388,7 @@ const DetectFieldsStep: React.FC = () => {
         </div>
         {/* Detected Fields panel */}
         <FieldListPanel
+          ref={fieldListRef}
           pdf={pdf}
           selectedFieldId={selectedFieldId}
           onSelect={(f) => setSelectedFieldId(f.id)}
@@ -398,6 +406,8 @@ const DetectFieldsStep: React.FC = () => {
           formFields={formFields}
           onShowError={handleShowError}
           onShowConfirmation={handleShowConfirmation}
+          currentPageFields={pdf.formFields.filter(f => f.pageNumber === pageIndex + 1).length}
+          totalFields={pdf.formFields.length}
         />
 
         {/* Form Fields panel */}

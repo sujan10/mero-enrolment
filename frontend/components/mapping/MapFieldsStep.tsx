@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { useAppStore } from "../../lib/store";
-import FieldListPanel from "../detect/FieldListPanel";
+import FieldListPanel, { FieldListPanelRef } from "../detect/FieldListPanel";
 import FormFieldsPanel from "../detect/FormFieldsPanel";
 import PdfFieldViewer from "../detect/PdfFieldViewer";
 import DocumentCarousel from "../common/DocumentCarousel";
@@ -37,6 +37,7 @@ const MapFieldsStep: React.FC = () => {
   const [pageIndex,setPageIndex]=useState(0);
   const [zoom,setZoom]=useState(0.75);
   const [docStates,setDocStates]=useState<Record<string,{pageIndex:number;zoom:number}>>({});
+  const fieldListRef = useRef<FieldListPanelRef>(null);
 
   // helpers
   const genId=()=>Math.random().toString(36).substr(2,9);
@@ -78,6 +79,12 @@ const MapFieldsStep: React.FC = () => {
   };
   const handleUnmap=(formFieldId:string,pdfFieldId:string)=>{
     removePdfFieldLink(pdfFieldId,formFieldId);
+  };
+
+  const handleFieldSelect = (field: any) => {
+    setSelectedFieldId(field.id);
+    // Scroll to the field in the list
+    fieldListRef.current?.scrollToField(field.id);
   };
 
   // mapping indices
@@ -169,7 +176,7 @@ const MapFieldsStep: React.FC = () => {
               key={pdf.id}
               pdf={pdf}
               selectedFieldId={selectedFieldId}
-              onFieldSelect={(f)=>setSelectedFieldId(f.id)}
+              onFieldSelect={handleFieldSelect}
               pageIndex={pageIndex}
               onPageChange={setPageIndex}
               zoom={zoom}
@@ -181,6 +188,7 @@ const MapFieldsStep: React.FC = () => {
 
         {/* Detected Fields Panel */}
         <FieldListPanel
+          ref={fieldListRef}
           pdf={pdf}
           selectedFieldId={selectedFieldId}
           onSelect={(f)=>setSelectedFieldId(f.id)}

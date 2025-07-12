@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, forwardRef, useImperativeHandle } from "react";
 import { PDFDocument, PDFFormField } from "../../types";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
@@ -27,9 +27,15 @@ interface FieldListPanelProps {
   formFields?: any[];
   onShowError?: (message: string) => void;
   onShowConfirmation?: (title: string, message: string, onConfirm: () => void) => void;
+  currentPageFields: number;
+  totalFields: number;
 }
 
-const FieldListPanel: React.FC<FieldListPanelProps> = ({
+export interface FieldListPanelRef {
+  scrollToField: (fieldId: string) => void;
+}
+
+const FieldListPanel = forwardRef<FieldListPanelRef, FieldListPanelProps>(({
   pdf,
   selectedFieldId,
   onSelect,
@@ -48,7 +54,9 @@ const FieldListPanel: React.FC<FieldListPanelProps> = ({
   formFields = [],
   onShowError,
   onShowConfirmation,
-}) => {
+  currentPageFields,
+  totalFields,
+}, ref) => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [tempName, setTempName] = useState("");
   const [expanded,setExpanded]=useState<Record<string,boolean>>({});
@@ -58,6 +66,29 @@ const FieldListPanel: React.FC<FieldListPanelProps> = ({
   const [typeChangeConfirmOpen, setTypeChangeConfirmOpen] = useState(false);
   const [pendingTypeChange, setPendingTypeChange] = useState<{fieldId: string, newType: PDFFormField["type"]} | null>(null);
   const withSelectedRef = useRef<HTMLDivElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const fieldRefs = useRef<Record<string, HTMLDivElement>>({});
+
+  // Expose scrollToField function to parent
+  useImperativeHandle(ref, () => ({
+    scrollToField: (fieldId: string) => {
+      const fieldElement = fieldRefs.current[fieldId];
+      const scrollContainer = scrollContainerRef.current;
+      
+      if (fieldElement && scrollContainer) {
+        const containerRect = scrollContainer.getBoundingClientRect();
+        const fieldRect = fieldElement.getBoundingClientRect();
+        
+        // Calculate scroll position to center the field
+        const scrollTop = scrollContainer.scrollTop + fieldRect.top - containerRect.top - (containerRect.height / 2) + (fieldRect.height / 2);
+        
+        scrollContainer.scrollTo({
+          top: scrollTop,
+          behavior: 'smooth'
+        });
+      }
+    }
+  }));
 
   const startRename = (field: PDFFormField) => {
     setEditingId(field.id);
@@ -154,7 +185,7 @@ const FieldListPanel: React.FC<FieldListPanelProps> = ({
         <div className="flex items-center justify-between mb-2 whitespace-nowrap">
           <div className="flex flex-col">
             <h3 className="font-semibold text-base">Detected Fields</h3>
-            <span className="text-[0.8rem] text-gray-600 font-normal">{pdf.formFields.length} fields</span>
+            <span className="text-[0.8rem] text-gray-600 font-normal">{currentPageFields} of {totalFields} fields</span>
           </div>
           <div className="flex flex-col items-end gap-1">
             <Button size="sm" variant={addMode?"secondary":"outline"} onClick={onToggleAddMode}>
@@ -187,7 +218,7 @@ const FieldListPanel: React.FC<FieldListPanelProps> = ({
         </div>
       </div>
 
-      <div className="overflow-y-scroll flex-1 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 min-h-0" onWheel={(e) => e.stopPropagation()}>
+      <div className="overflow-y-scroll flex-1 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 min-h-0" onWheel={(e) => e.stopPropagation()} ref={scrollContainerRef}>
         <div className="p-1 sm:p-2 space-y-3">
           {/* Render fields for current page (flat) */}
           {pdf.formFields.filter(f=>f.pageNumber===currentPage).map((field) => {
@@ -198,6 +229,7 @@ const FieldListPanel: React.FC<FieldListPanelProps> = ({
             key={field.id}
             className={`border rounded-md overflow-hidden ${isSelected ? "bg-blue-100 border-blue-500 shadow-md" : errorFieldId===field.id?"bg-red-100 border-red-300":"bg-gray-50"} cursor-pointer`}
             onClick={() => onSelect?.(field)}
+            ref={el => fieldRefs.current[field.id] = el}
           >
             <div className="flex items-stretch">
               {/* Checkbox strip with caret */}
@@ -328,6 +360,6 @@ const FieldListPanel: React.FC<FieldListPanelProps> = ({
       </Dialog>
     </div>
   );
-};
+});
 
 export default FieldListPanel; 
