@@ -142,11 +142,11 @@ export const useAppStore = create<AppStore>()(
       updatePdfFields: (pdfId, fields) => set((state) => {
         // Get the old PDF to find deleted fields
         const oldPdf = state.pdfs.find(pdf => pdf.id === pdfId);
-        const oldFieldIds = oldPdf ? new Set(oldPdf.formFields.map(f => f.id)) : new Set();
+        const oldFieldIds = oldPdf ? new Set(oldPdf.formFields.map(f => f.id)) : new Set<string>();
         const newFieldIds = new Set(fields.map(f => f.id));
         
         // Find deleted field IDs
-        const deletedFieldIds = Array.from(oldFieldIds).filter(id => !newFieldIds.has(id));
+        const deletedFieldIds = Array.from(oldFieldIds).filter((id: string) => !newFieldIds.has(id));
         
         // Clean up pdfFieldLinks for deleted PDF fields
         const updatedPdfFieldLinks = { ...state.pdfFieldLinks };
