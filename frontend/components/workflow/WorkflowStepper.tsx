@@ -12,7 +12,6 @@ import {
   ChevronRight,
   CheckCircle,
   Circle,
-  AlertCircle,
   Users,
   UserCheck,
   Shield,
@@ -25,9 +24,12 @@ import { Button } from '../ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Badge } from '../ui/badge';
 import { useAppStore, useUser, useUserRole, useCurrentStep } from '../../lib/store';
-import { WorkflowStep, WORKFLOW_CONFIG, UserRole } from '../../types';
+import { WorkflowStep, WORKFLOW_CONFIG, UserRole, PDFFormField } from '../../types';
+
+import toast from 'react-hot-toast';
 import PdfUploader from '../pdf/PdfUploader';
 import dynamic from 'next/dynamic';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogPortal, DialogOverlay } from '../ui/dialog';
 const WarnOnNavigate = dynamic(() => import("../common/WarnOnNavigate"), { ssr: false });
 
 const DetectFieldsStep = dynamic(() => import('../detect/DetectFieldsStep'), {
@@ -66,6 +68,7 @@ const WorkflowStepper: React.FC = () => {
   const user = useUser();
   const userRole = useUserRole();
   const [isClient, setIsClient] = useState(false);
+
 
   // Load components dynamically on client side
   useEffect(() => {
@@ -225,6 +228,11 @@ const WorkflowStepper: React.FC = () => {
   const detectStepHasFields = currentPdf ? currentPdf.formFields.length>0 : false;
   const disableNext = isDetectFieldsStep && !detectStepHasFields;
 
+  const handleNextStep = () => {
+    // Proceed with normal next step
+    nextStep();
+  };
+
   return (
     <>
       <WarnOnNavigate />
@@ -299,7 +307,7 @@ const WorkflowStepper: React.FC = () => {
           </Button>
           
           <Button
-            onClick={nextStep}
+            onClick={handleNextStep}
             disabled={currentStep === totalSteps - 1 || disableNext}
             className="flex items-center gap-1 sm:gap-2 text-sm w-24 justify-center bg-green-600 hover:bg-green-700 text-white border-green-600 hover:border-green-700"
           >
@@ -329,6 +337,8 @@ const WorkflowStepper: React.FC = () => {
           </CardContent>
         </Card>
       </div>
+
+
     </>
   );
 };

@@ -80,21 +80,28 @@ export const useAppStore = create<AppStore>()(
       isLoading: false,
       error: null,
 
-      // User Actions
-      setUser: (user) => {
-        const role = user?.role || null;
-        const workflowConfig = role ? WORKFLOW_CONFIG[role] : null;
-        const totalSteps = workflowConfig ? workflowConfig.steps.length : 0;
-        
-        set({
-          user,
-          userRole: role,
-          currentStep: 0,
-          totalSteps,
-          formData: {},
-          error: null
-        });
-      },
+        // User Actions
+  setUser: (user) => {
+    const role = user?.role || null;
+    const workflowConfig = role ? WORKFLOW_CONFIG[role] : null;
+    const totalSteps = workflowConfig ? workflowConfig.steps.length : 0;
+    
+    set({
+      user,
+      userRole: role,
+      currentStep: 0,
+      totalSteps,
+      formData: {},
+      error: null
+    });
+  },
+
+  // Validation function to check for duplicate field names
+  validateFieldNames: () => {
+    const { pdfs } = get();
+    const { validateFieldNames } = require('./utils');
+    return validateFieldNames(pdfs);
+  },
 
       setUserRole: (role) => {
         const workflowConfig = role ? WORKFLOW_CONFIG[role] : null;

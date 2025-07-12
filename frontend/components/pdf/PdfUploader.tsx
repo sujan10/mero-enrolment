@@ -11,6 +11,7 @@ import { PDFDocument, PDFFormField, PDFPage } from '../../types';
 import toast from 'react-hot-toast';
 import { PDFDocument as PDFLibDocument } from 'pdf-lib';
 import Tesseract from 'tesseract.js';
+import { FieldNameManager, generateUniqueFieldId } from '../../lib/utils';
 
 // Dynamic imports for react-pdf components
 let Document: any = null;
@@ -126,6 +127,13 @@ const PdfUploader: React.FC = () => {
               if(txt.length<=2 && w.confidence<60 && boxWidth>30) return true; // blank-ish or low confidence
               return false;
             };
+            
+            // Create field name manager for OCR fields
+            const { pdfs: existingPdfs } = useAppStore.getState();
+            const fieldNameManager = new FieldNameManager(
+              existingPdfs.flatMap(pdf => pdf.formFields)
+            );
+            
             ocrData.words.forEach((w:any, idx:number)=>{
               if(!isCandidate(w)) return;
               const x=w.bbox.x0;
@@ -134,9 +142,25 @@ const PdfUploader: React.FC = () => {
               const height=w.bbox.y1-w.bbox.y0;
               const pdfX=x;
               const pdfY = page0.height - (yTop + height);
+              
+              // Generate unique field name for OCR field
+              const uniqueName = fieldNameManager.generateUniqueName(
+                null, // No original name for OCR fields
+                'text',
+                'ocr_field'
+              );
+              
+              // Generate unique field ID
+              const uniqueId = generateUniqueFieldId(
+                pdfId,
+                1, // OCR fields are always on page 1
+                idx,
+                uniqueName
+              );
+              
               ocrFields.push({
-                id:`${pdfId}_ocr_${idx}`,
-                name:`ocr_field_${idx}`,
+                id: uniqueId,
+                name: uniqueName,
                 type:'text',
                 x:pdfX,
                 y:pdfY,
@@ -197,6 +221,12 @@ const PdfUploader: React.FC = () => {
           const pages: PDFPage[] = [];
           const allFormFields: PDFFormField[] = [];
           
+          // Create field name manager to ensure unique names across all PDFs
+          const { pdfs: existingPdfs } = useAppStore.getState();
+          const fieldNameManager = new FieldNameManager(
+            existingPdfs.flatMap(pdf => pdf.formFields)
+          );
+          
           for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
             const page = await pdf.getPage(pageNum);
             const viewport = page.getViewport({ scale: 1.0 });
@@ -212,18 +242,38 @@ const PdfUploader: React.FC = () => {
             const annotations = await page.getAnnotations();
             const pageFormFields: PDFFormField[] = annotations
               .filter((annotation: any) => annotation.subtype === 'Widget')
-              .map((annotation: any, index: number) => ({
-                id: `${pdfDoc.id}_page${pageNum}_field${index}`,
-                name: annotation.fieldName || `field_${index}`,
-                type: getFieldType(annotation),
-                x: annotation.rect[0],
-                y: annotation.rect[1],
-                width: annotation.rect[2] - annotation.rect[0],
-                height: annotation.rect[3] - annotation.rect[1],
-                pageNumber: pageNum,
-                required: false,
-                options: annotation.fieldValue ? [annotation.fieldValue] : undefined
-              }));
+              .map((annotation: any, index: number) => {
+                const fieldType = getFieldType(annotation);
+                const originalName = annotation.fieldName || null;
+                
+                // Generate unique field name
+                const uniqueName = fieldNameManager.generateUniqueName(
+                  originalName,
+                  fieldType,
+                  `page_${pageNum}`
+                );
+                
+                // Generate unique field ID
+                const uniqueId = generateUniqueFieldId(
+                  pdfDoc.id,
+                  pageNum,
+                  index,
+                  uniqueName
+                );
+                
+                return {
+                  id: uniqueId,
+                  name: uniqueName,
+                  type: fieldType,
+                  x: annotation.rect[0],
+                  y: annotation.rect[1],
+                  width: annotation.rect[2] - annotation.rect[0],
+                  height: annotation.rect[3] - annotation.rect[1],
+                  pageNumber: pageNum,
+                  required: false,
+                  options: annotation.fieldValue ? [annotation.fieldValue] : undefined
+                };
+              });
 
             allFormFields.push(...pageFormFields);
             pages[pageNum - 1].formFields = pageFormFields;

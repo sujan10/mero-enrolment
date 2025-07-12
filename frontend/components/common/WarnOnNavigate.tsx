@@ -15,7 +15,7 @@ const WarnOnNavigate = () => {
 
     const popHandler = () => {
       if(!confirm("You will lose all unsaved progress and exit the app. Continue?")){
-        router.push(router.asPath);
+        // In App Router, we can't easily get the current path, so we'll just prevent the navigation
         return false;
       }
       return true;

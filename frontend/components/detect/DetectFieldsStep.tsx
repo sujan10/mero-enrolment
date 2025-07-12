@@ -9,6 +9,7 @@ import FormFieldsPanel from "./FormFieldsPanel";
 import { useAppStore } from "../../lib/store";
 import { PDFFormField, FormField } from "../../types";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "../ui/dialog";
+import { FieldNameManager } from "../../lib/utils";
 
 // util id
 
@@ -55,15 +56,10 @@ const DetectFieldsStep: React.FC = () => {
   };
 
   const generateUniqueName = (base: string) => {
-    const names = getAllFieldNames();
-    if (!names.has(base)) return base;
-    let i = 1;
-    let candidate = `${base}_${i}`;
-    while (names.has(candidate)) {
-      i += 1;
-      candidate = `${base}_${i}`;
-    }
-    return candidate;
+    const fieldNameManager = new FieldNameManager(
+      pdfs.flatMap(doc => doc.formFields)
+    );
+    return fieldNameManager.generateUniqueName(base, 'text', 'manual_field');
   };
 
   // Handlers
@@ -127,8 +123,15 @@ const DetectFieldsStep: React.FC = () => {
   };
 
   const handleAddField = (newField: PDFFormField) => {
-    // ensure unique name
-    const uniqueName = generateUniqueName(newField.name || 'field');
+    // Generate unique name using field name manager
+    const fieldNameManager = new FieldNameManager(
+      pdfs.flatMap(doc => doc.formFields)
+    );
+    const uniqueName = fieldNameManager.generateUniqueName(
+      newField.name || 'field',
+      newField.type,
+      'manual_field'
+    );
     const fieldWithName = { ...newField, name: uniqueName };
     updatePdfFields(pdf.id, [...pdf.formFields, fieldWithName]);
     setSelectedFieldId(fieldWithName.id);
@@ -333,7 +336,7 @@ const DetectFieldsStep: React.FC = () => {
                size="icon" 
                onClick={() => {
                  // Fit to page horizontally
-                 const container = document.querySelector('.relative.flex-1.overflow-auto');
+                 const container = document.querySelector('.relative.flex-1.overflow-auto') as HTMLElement | null;
                  if (container) {
                    const containerWidth = container.clientWidth;
                    const scrollbarWidth = container.offsetWidth - container.clientWidth;
@@ -352,7 +355,7 @@ const DetectFieldsStep: React.FC = () => {
                size="icon" 
                onClick={() => {
                  // Fit to page vertically
-                 const container = document.querySelector('.relative.flex-1.overflow-auto');
+                 const container = document.querySelector('.relative.flex-1.overflow-auto') as HTMLElement | null;
                  if (container) {
                    const containerHeight = container.clientHeight;
                    const scrollbarHeight = container.offsetHeight - container.clientHeight;
