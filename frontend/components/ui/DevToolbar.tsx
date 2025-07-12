@@ -48,7 +48,7 @@ export default function DevToolbar() {
                   const elements = document.querySelectorAll('*');
                   console.log("Page elements count:", elements.length);
                   console.log("React components:", Array.from(elements).filter(el => 
-                    el._reactInternalFiber || el._reactInternalInstance
+                    (el as any)._reactInternalFiber || (el as any)._reactInternalInstance
                   ).length);
                 }}
                 className="w-full justify-start"
