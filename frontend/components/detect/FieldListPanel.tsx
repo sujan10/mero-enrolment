@@ -65,9 +65,10 @@ const FieldListPanel = forwardRef<FieldListPanelRef, FieldListPanelProps>(({
   const [fieldToDelete, setFieldToDelete] = useState<string | null>(null);
   const [typeChangeConfirmOpen, setTypeChangeConfirmOpen] = useState(false);
   const [pendingTypeChange, setPendingTypeChange] = useState<{fieldId: string, newType: PDFFormField["type"]} | null>(null);
+  const [filterType, setFilterType] = useState<'mapped' | 'unmapped' | null>(null);
   const withSelectedRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
-  const fieldRefs = useRef<Record<string, HTMLDivElement>>({});
+  const fieldRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
   // Expose scrollToField function to parent
   useImperativeHandle(ref, () => ({
@@ -162,6 +163,18 @@ const FieldListPanel = forwardRef<FieldListPanelRef, FieldListPanelProps>(({
 
   const selectedCount = selectedForMapping.size;
 
+  // Filter fields based on filterType
+  const filteredFields = pdf.formFields.filter(f => {
+    if (f.pageNumber !== currentPage) return false;
+    
+    if (filterType === 'mapped') {
+      return mappedFieldIds.has(f.id);
+    } else if (filterType === 'unmapped') {
+      return !mappedFieldIds.has(f.id);
+    }
+    return true; // Show all when no filter is active
+  });
+
   // Handle click outside to close dropdown
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -185,7 +198,7 @@ const FieldListPanel = forwardRef<FieldListPanelRef, FieldListPanelProps>(({
         <div className="flex items-center justify-between mb-2 whitespace-nowrap">
           <div className="flex flex-col">
             <h3 className="font-semibold text-base">Detected Fields</h3>
-            <span className="text-[0.8rem] text-gray-600 font-normal">{currentPageFields} of {totalFields} fields</span>
+            <span className="text-[0.8rem] text-gray-600 font-normal">{filteredFields.length} of {currentPageFields} fields</span>
           </div>
           <div className="flex flex-col items-end gap-1">
             <Button size="sm" variant={addMode?"secondary":"outline"} onClick={onToggleAddMode}>
@@ -218,10 +231,37 @@ const FieldListPanel = forwardRef<FieldListPanelRef, FieldListPanelProps>(({
         </div>
       </div>
 
+      {/* Filter Section */}
+      <div className="p-2 border-b border-gray-200">
+        <div className="flex items-center gap-0 border border-gray-300 rounded-md overflow-hidden">
+          <button
+            onClick={() => setFilterType(filterType === 'mapped' ? null : 'mapped')}
+            className={`flex-1 px-3 py-1.5 text-xs font-medium transition-colors text-center ${
+              filterType === 'mapped' 
+                ? 'bg-blue-500 text-white' 
+                : 'bg-white text-gray-700 hover:bg-gray-50'
+            }`}
+          >
+            Mapped
+          </button>
+          <div className="w-px bg-gray-300 h-4"></div>
+          <button
+            onClick={() => setFilterType(filterType === 'unmapped' ? null : 'unmapped')}
+            className={`flex-1 px-3 py-1.5 text-xs font-medium transition-colors text-center ${
+              filterType === 'unmapped' 
+                ? 'bg-blue-500 text-white' 
+                : 'bg-white text-gray-700 hover:bg-gray-50'
+            }`}
+          >
+            Unmapped
+          </button>
+        </div>
+      </div>
+
       <div className="overflow-y-scroll flex-1 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 min-h-0" onWheel={(e) => e.stopPropagation()} ref={scrollContainerRef}>
         <div className="p-1 sm:p-2 space-y-3">
-          {/* Render fields for current page (flat) */}
-          {pdf.formFields.filter(f=>f.pageNumber===currentPage).map((field) => {
+          {/* Render filtered fields */}
+          {filteredFields.map((field) => {
         const isSelected = field.id === selectedFieldId;
         const isEditing = field.id === editingId;
         return (
@@ -229,7 +269,7 @@ const FieldListPanel = forwardRef<FieldListPanelRef, FieldListPanelProps>(({
             key={field.id}
             className={`border rounded-md overflow-hidden ${isSelected ? "bg-blue-100 border-blue-500 shadow-md" : errorFieldId===field.id?"bg-red-100 border-red-300":"bg-gray-50"} cursor-pointer`}
             onClick={() => onSelect?.(field)}
-            ref={el => fieldRefs.current[field.id] = el}
+            ref={el => { fieldRefs.current[field.id] = el; }}
           >
             <div className="flex items-stretch">
               {/* Checkbox strip with caret */}
