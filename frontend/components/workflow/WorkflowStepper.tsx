@@ -226,9 +226,14 @@ const WorkflowStepper: React.FC = () => {
   const isDetectFieldsStep = userRole === 'admin' && currentStep === 1;
   const currentPdf = selectedPdf || pdfs[0];
   const detectStepHasFields = currentPdf ? currentPdf.formFields.length>0 : false;
-  const disableNext = isDetectFieldsStep && !detectStepHasFields;
+  const hasUploadedDocuments = pdfs.length > 0;
+  const disableNext = (isDetectFieldsStep && !detectStepHasFields) || !hasUploadedDocuments;
 
   const handleNextStep = () => {
+    if (!hasUploadedDocuments) {
+      toast.error('Please upload at least one document before proceeding.');
+      return;
+    }
     // Proceed with normal next step
     nextStep();
   };
