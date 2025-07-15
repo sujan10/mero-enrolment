@@ -20,7 +20,7 @@
     "@radix-ui/react-slot": "^1.2.3",
     "@radix-ui/react-tabs": "^1.1.12",
     "@shadcn/ui": "^0.0.4",
-    "@stagewise/toolbar": "^0.5.2",
+    "@stagewise/toolbar": "^0.6.0",
     "@types/react-beautiful-dnd": "^13.1.8",
     "@types/react-dropzone": "^4.2.2",
     "@types/react-signature-canvas": "^1.0.7",

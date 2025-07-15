@@ -9,18 +9,13 @@ export default function StagewiseWrapper() {
 
     const initStagewise = async () => {
       try {
-        console.log("Initializing Stagewise toolbar...");
-        
         const { initToolbar } = await import("@stagewise/toolbar");
         
         initToolbar({
           plugins: [],
-          // Add any additional configuration here
         });
-        
-        console.log("Stagewise toolbar initialized successfully");
       } catch (error) {
-        console.error("Failed to initialize Stagewise toolbar:", error);
+        console.warn("Stagewise toolbar initialization failed:", error);
       }
     };
 
@@ -29,6 +24,5 @@ export default function StagewiseWrapper() {
   }, []);
 
   // This component doesn't render anything visible
-  // The toolbar is injected into the DOM by the stagewise package
   return null;
 } 
