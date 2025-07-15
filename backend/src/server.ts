@@ -5,7 +5,28 @@ import path from 'path';
 import fs from 'fs';
 import { PDFDocument } from 'pdf-lib';
 import jwt from 'jsonwebtoken';
-import { initUserDb, createUser, findUserByEmail, updateUserStatus, updateUserPassword } from './user';
+import { 
+  initUserDb, 
+  createUser, 
+  findUserByEmail, 
+  updateUserStatus, 
+  updateUserPassword,
+  createWorkspace,
+  getWorkspacesByUserId,
+  getWorkspaceById,
+  updateWorkspace,
+  deleteWorkspace,
+  createPdfFile,
+  getPdfFilesByWorkspaceId,
+  deletePdfFile,
+  createFormField,
+  getFormFieldsByWorkspaceId,
+  updateFormField,
+  deleteFormField,
+  createFormMapping,
+  getFormMappingsByWorkspaceId,
+  deleteFormMapping
+} from './user';
 const JWT_SECRET = process.env.JWT_SECRET || 'supersecret';
 
 const app = express();
@@ -107,8 +128,227 @@ app.post('/api/login', async (req: Request, res: Response) => {
     res.status(401).json({ error: 'Invalid credentials' });
     return;
   }
-  const token = jwt.sign({ email: user.email, role: user.role, status: user.status }, JWT_SECRET, { expiresIn: '7d' });
+  const token = jwt.sign({ 
+    sub: user.id,
+    email: user.email, 
+    role: user.role, 
+    status: user.status 
+  }, JWT_SECRET, { expiresIn: '7d' });
   res.json({ token });
+});
+
+// Change password endpoint
+app.post('/api/change-password', authMiddleware, async (req: Request, res: Response) => {
+  const { newPassword } = req.body;
+  const user = (req as any).user;
+  
+  if (!newPassword || newPassword.length < 6) {
+    res.status(400).json({ error: 'Password must be at least 6 characters long' });
+    return;
+  }
+  
+  try {
+    await updateUserPassword(user.email, newPassword);
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to update password' });
+  }
+});
+
+// Workspaces endpoints
+app.get('/api/workspaces', authMiddleware, async (req: Request, res: Response) => {
+  const user = (req as any).user;
+  try {
+    const workspaces = await getWorkspacesByUserId(user.sub);
+    res.json({ workspaces });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch workspaces' });
+  }
+});
+
+app.post('/api/workspaces', authMiddleware, async (req: Request, res: Response) => {
+  const { name } = req.body;
+  const user = (req as any).user;
+  
+  if (!name) {
+    res.status(400).json({ error: 'Workspace name is required' });
+    return;
+  }
+  
+  try {
+    const workspaceId = await createWorkspace(name, user.sub);
+    res.json({ success: true, workspaceId });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to create workspace' });
+  }
+});
+
+app.get('/api/workspaces/:id', authMiddleware, async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const user = (req as any).user;
+  
+  try {
+    const workspace = await getWorkspaceById(parseInt(id), user.sub);
+    if (!workspace) {
+      res.status(404).json({ error: 'Workspace not found' });
+      return;
+    }
+    res.json({ workspace });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch workspace' });
+  }
+});
+
+app.put('/api/workspaces/:id', authMiddleware, async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const updates = req.body;
+  const user = (req as any).user;
+  
+  try {
+    await updateWorkspace(parseInt(id), updates);
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to update workspace' });
+  }
+});
+
+app.delete('/api/workspaces/:id', authMiddleware, async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const user = (req as any).user;
+  
+  try {
+    await deleteWorkspace(parseInt(id), user.sub);
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to delete workspace' });
+  }
+});
+
+// PDF files endpoints
+app.get('/api/pdfs', authMiddleware, async (req: Request, res: Response) => {
+  const user = (req as any).user;
+  try {
+    // Get all PDFs for the user (across all workspaces)
+    const workspaces = await getWorkspacesByUserId(user.sub);
+    const allPdfs = [];
+    
+    for (const workspace of workspaces) {
+      const pdfs = await getPdfFilesByWorkspaceId(workspace.id, user.sub);
+      allPdfs.push(...pdfs);
+    }
+    
+    res.json({ pdfs: allPdfs });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch PDF files' });
+  }
+});
+
+app.get('/api/workspaces/:workspaceId/pdfs', authMiddleware, async (req: Request, res: Response) => {
+  const { workspaceId } = req.params;
+  const user = (req as any).user;
+  
+  try {
+    const pdfs = await getPdfFilesByWorkspaceId(parseInt(workspaceId), user.sub);
+    res.json({ pdfs });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch PDF files' });
+  }
+});
+
+app.post('/api/pdfs', authMiddleware, async (req: Request, res: Response) => {
+  const { workspaceId, fileName, originalName, blobUrl, fileSize, pages } = req.body;
+  const user = (req as any).user;
+  
+  if (!workspaceId || !fileName || !originalName) {
+    res.status(400).json({ error: 'Missing required fields' });
+    return;
+  }
+  
+  try {
+    const pdfId = await createPdfFile(
+      parseInt(workspaceId), 
+      user.sub, 
+      fileName, 
+      originalName, 
+      blobUrl, 
+      fileSize, 
+      pages
+    );
+    res.json({ success: true, pdfId });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to create PDF file record' });
+  }
+});
+
+app.delete('/api/pdfs/:id', authMiddleware, async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const user = (req as any).user;
+  
+  try {
+    await deletePdfFile(parseInt(id), user.sub);
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to delete PDF file' });
+  }
+});
+
+// Form fields endpoints
+app.get('/api/workspaces/:workspaceId/form-fields', authMiddleware, async (req: Request, res: Response) => {
+  const { workspaceId } = req.params;
+  const user = (req as any).user;
+  
+  try {
+    const fields = await getFormFieldsByWorkspaceId(parseInt(workspaceId), user.sub);
+    res.json({ fields });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch form fields' });
+  }
+});
+
+app.post('/api/workspaces/:workspaceId/form-fields', authMiddleware, async (req: Request, res: Response) => {
+  const { workspaceId } = req.params;
+  const fieldData = req.body;
+  const user = (req as any).user;
+  
+  try {
+    const fieldId = await createFormField(parseInt(workspaceId), fieldData);
+    res.json({ success: true, fieldId });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to create form field' });
+  }
+});
+
+// Form mappings endpoints
+app.get('/api/workspaces/:workspaceId/mappings', authMiddleware, async (req: Request, res: Response) => {
+  const { workspaceId } = req.params;
+  const user = (req as any).user;
+  
+  try {
+    const mappings = await getFormMappingsByWorkspaceId(parseInt(workspaceId), user.sub);
+    res.json({ mappings });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch form mappings' });
+  }
+});
+
+app.post('/api/workspaces/:workspaceId/mappings', authMiddleware, async (req: Request, res: Response) => {
+  const { workspaceId } = req.params;
+  const { formFieldId, pdfFieldId, pdfFileId, isRepeated, repeatedPages } = req.body;
+  const user = (req as any).user;
+  
+  try {
+    const mappingId = await createFormMapping(
+      parseInt(workspaceId), 
+      formFieldId, 
+      pdfFieldId, 
+      parseInt(pdfFileId), 
+      isRepeated, 
+      repeatedPages
+    );
+    res.json({ success: true, mappingId });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to create form mapping' });
+  }
 });
 
 // Invite endpoint (admin only)
@@ -128,21 +368,24 @@ app.post('/api/invite', authMiddleware, async (req: Request, res: Response) => {
   }
 });
 
-// Reset password endpoint
-app.post('/api/reset-password', async (req: Request, res: Response) => {
-  const { email, newPassword } = req.body;
-  if (!email || !newPassword) {
-    res.status(400).json({ error: 'Email and new password required' });
-    return;
+// Helper function to get field type
+function getFieldType(field: any): string {
+  const fieldType = field.constructor.name;
+  switch (fieldType) {
+    case 'PDFCheckBox':
+      return 'checkbox';
+    case 'PDFRadioGroup':
+      return 'radio';
+    case 'PDFDropdown':
+      return 'select';
+    case 'PDFSignature':
+      return 'signature';
+    case 'PDFDate':
+      return 'date';
+    default:
+      return 'text';
   }
-  await updateUserPassword(email, newPassword);
-  res.json({ success: true });
-});
-
-// Health check endpoint
-app.get('/health', (req: Request, res: Response) => {
-  res.json({ status: 'OK', timestamp: new Date().toISOString() });
-});
+}
 
 // PDF upload endpoint
 app.post('/api/upload-pdf', authMiddleware, upload.single('pdf'), async (req: Request, res: Response) => {
@@ -267,22 +510,6 @@ app.get('/api/download/:filename', authMiddleware, (req: Request, res: Response)
     res.status(500).json({ error: 'Failed to download file' });
   }
 });
-
-// Helper function to get field type
-function getFieldType(field: any): string {
-  if (field.constructor.name === 'PDFTextField') {
-    return 'text';
-  } else if (field.constructor.name === 'PDFCheckBox') {
-    return 'checkbox';
-  } else if (field.constructor.name === 'PDFRadioGroup') {
-    return 'radio';
-  } else if (field.constructor.name === 'PDFDropdown') {
-    return 'select';
-  } else if (field.constructor.name === 'PDFSignature') {
-    return 'signature';
-  }
-  return 'text';
-}
 
 // Helper function to fill field
 function fillField(field: any, value: any) {

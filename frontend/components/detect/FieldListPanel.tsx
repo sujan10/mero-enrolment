@@ -198,7 +198,7 @@ const FieldListPanel = forwardRef<FieldListPanelRef, FieldListPanelProps>(({
         <div className="flex items-center justify-between mb-2 whitespace-nowrap">
           <div className="flex flex-col">
             <h3 className="font-semibold text-base">Detected Fields</h3>
-            <span className="text-[0.8rem] text-gray-600 font-normal">{filteredFields.length} of {currentPageFields} fields</span>
+            <span className="text-[0.8rem] text-gray-600 font-normal">{filteredFields.length} of {totalFields} fields</span>
           </div>
           <div className="flex flex-col items-end gap-1">
             <Button size="sm" variant={addMode?"secondary":"outline"} onClick={onToggleAddMode}>

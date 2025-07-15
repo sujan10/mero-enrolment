@@ -4,6 +4,7 @@ export interface PDFDocument {
   name: string;
   file: File;
   url?: string;
+  blobUrl?: string; // Vercel BLOB storage URL
   pages: PDFPage[];
   formFields: PDFFormField[];
   createdAt: Date;
@@ -93,6 +94,7 @@ export type UserRole = 'client' | 'admin' | 'owner';
 export interface User {
   id: string;
   email: string;
+  name?: string;
   role: UserRole;
   status: 'active' | 'inactive' | 'pending';
   createdAt: Date;

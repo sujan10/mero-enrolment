@@ -2,22 +2,19 @@
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useUser } from '../lib/store';
-import { isAuthenticated } from '../lib/auth';
-import WorkflowStepper from '../components/workflow/WorkflowStepper';
+import { useUser } from '../../lib/store';
+import { isAuthenticated } from '../../lib/auth';
+import WorkflowStepper from '../../components/workflow/WorkflowStepper';
 
-export default function Home() {
+export default function WorkflowPage() {
   const user = useUser();
   const router = useRouter();
 
   useEffect(() => {
     if (!isAuthenticated()) {
       router.push('/login');
-    } else if (user) {
-      // If user is authenticated, redirect to dashboard
-      router.push('/dashboard');
     }
-  }, [router, user]);
+  }, [router]);
 
   if (!user) {
     return null; // Will redirect to login
