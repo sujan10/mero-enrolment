@@ -1,11 +1,12 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
 import { Card, CardContent } from '../../components/ui/card';
+import { Checkbox } from '../../components/ui/checkbox';
 import { useAppStore } from '../../lib/store';
 import { UserRole } from '../../types';
 import { Eye, EyeOff, AlertCircle } from 'lucide-react';
@@ -18,11 +19,25 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [rememberMe, setRememberMe] = useState(false);
   
   const { setUser } = useAppStore();
   const router = useRouter();
 
   const appName = process.env.NEXT_PUBLIC_APP_NAME || 'Mero Enrolment';
+
+  // Load saved credentials on component mount
+  useEffect(() => {
+    const savedEmail = localStorage.getItem('rememberedEmail');
+    const savedPassword = localStorage.getItem('rememberedPassword');
+    const savedRememberMe = localStorage.getItem('rememberMe') === 'true';
+    
+    if (savedEmail && savedPassword && savedRememberMe) {
+      setEmail(savedEmail);
+      setPassword(savedPassword);
+      setRememberMe(true);
+    }
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -42,6 +57,17 @@ export default function LoginPage() {
 
       if (!response.ok) {
         throw new Error(data.error || 'Login failed');
+      }
+
+      // Store or clear remembered credentials
+      if (rememberMe) {
+        localStorage.setItem('rememberedEmail', email);
+        localStorage.setItem('rememberedPassword', password);
+        localStorage.setItem('rememberMe', 'true');
+      } else {
+        localStorage.removeItem('rememberedEmail');
+        localStorage.removeItem('rememberedPassword');
+        localStorage.removeItem('rememberMe');
       }
 
       // Store token and start session
@@ -118,6 +144,18 @@ export default function LoginPage() {
                   {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
               </div>
+            </div>
+
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="rememberMe"
+                checked={rememberMe}
+                onCheckedChange={(checked) => setRememberMe(checked as boolean)}
+                disabled={isLoading}
+              />
+              <Label htmlFor="rememberMe" className="text-sm font-normal">
+                Remember me
+              </Label>
             </div>
             
             <Button

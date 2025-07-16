@@ -241,10 +241,10 @@ export default function ProfilePage() {
           </Button>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* User Information */}
           <Card>
-            <CardHeader>
+            <CardHeader className="p-6 pb-3 flex justify-center items-center">
               <CardTitle className="flex items-center gap-2">
                 <User className="h-5 w-5" />
                 User Information
@@ -295,8 +295,7 @@ export default function ProfilePage() {
               </div>
               
               <div>
-                <Label className="text-sm font-medium text-gray-600">Role</Label>
-                <Badge className={`mt-1 ${
+                <Badge className={`${
                   user.role === 'admin' ? 'bg-green-100 text-green-800' :
                   user.role === 'owner' ? 'bg-purple-100 text-purple-800' :
                   'bg-blue-100 text-blue-800'
@@ -306,197 +305,155 @@ export default function ProfilePage() {
               </div>
               
               <div>
-                <Label className="text-sm font-medium text-gray-600">Status</Label>
-                <Badge className={`mt-1 ${
+                <Badge className={`${
                   user.status === 'active' ? 'bg-green-100 text-green-800' :
                   'bg-red-100 text-red-800'
                 }`}>
                   {user.status.charAt(0).toUpperCase() + user.status.slice(1)}
                 </Badge>
               </div>
-              
-              <div>
-                <Label className="text-sm font-medium text-gray-600">Member Since</Label>
-                <p className="text-sm text-gray-600">
-                  {new Date(user.createdAt).toLocaleDateString()}
-                </p>
+
+              {/* Change Password Section */}
+              <div className="pt-4 border-t">
+                {!isEditingPassword ? (
+                  <Button onClick={() => setIsEditingPassword(true)} variant="outline" className="w-full">
+                    <Edit className="h-4 w-4 mr-2" />
+                    Change Password
+                  </Button>
+                ) : (
+                  <form onSubmit={handlePasswordChange} className="space-y-4">
+                    <div>
+                      <Label htmlFor="newPassword">New Password</Label>
+                      <Input
+                        id="newPassword"
+                        type="password"
+                        value={newPassword}
+                        onChange={(e) => setNewPassword(e.target.value)}
+                        placeholder="Enter new password"
+                        required
+                      />
+                    </div>
+                    
+                    <div>
+                      <Label htmlFor="confirmPassword">Confirm Password</Label>
+                      <Input
+                        id="confirmPassword"
+                        type="password"
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        placeholder="Confirm new password"
+                        required
+                      />
+                    </div>
+                    
+                    <div className="flex gap-2">
+                      <Button type="submit" size="sm" disabled={isSaving}>
+                        {isSaving ? 'Saving...' : (
+                          <>
+                            <Save className="h-4 w-4 mr-2" />
+                            Save
+                          </>
+                        )}
+                      </Button>
+                      <Button 
+                        type="button" 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => {
+                          setIsEditingPassword(false);
+                          setNewPassword('');
+                          setConfirmPassword('');
+                        }}
+                      >
+                        <X className="h-4 w-4 mr-2" />
+                        Cancel
+                      </Button>
+                    </div>
+                  </form>
+                )}
               </div>
             </CardContent>
           </Card>
 
-          {/* Password Change */}
+          {/* Workspaces */}
           <Card>
-            <CardHeader>
+            <CardHeader className="p-6 pb-3 flex justify-center items-center">
               <CardTitle className="flex items-center gap-2">
-                <Settings className="h-5 w-5" />
-                Security
+                <FolderOpen className="h-5 w-5" />
+                Your Workspaces
               </CardTitle>
             </CardHeader>
             <CardContent>
-              {!isEditingPassword ? (
-                <Button onClick={() => setIsEditingPassword(true)} variant="outline" className="w-full">
-                  <Edit className="h-4 w-4 mr-2" />
-                  Change Password
-                </Button>
+              {isLoading ? (
+                <div className="text-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-4"></div>
+                  <p className="text-gray-600">Loading workspaces...</p>
+                </div>
+              ) : workspaces.length === 0 ? (
+                <div className="text-center py-8">
+                  <FolderOpen className="h-12 w-12 mx-auto mb-4 text-gray-400" />
+                  <p className="text-gray-600">No workspaces yet</p>
+                  <Button onClick={() => router.push('/dashboard')} className="mt-4">
+                    <Plus className="h-4 w-4 mr-2" />
+                    Create Workspace
+                  </Button>
+                </div>
               ) : (
-                <form onSubmit={handlePasswordChange} className="space-y-4">
-                  <div>
-                    <Label htmlFor="newPassword">New Password</Label>
-                    <Input
-                      id="newPassword"
-                      type="password"
-                      value={newPassword}
-                      onChange={(e) => setNewPassword(e.target.value)}
-                      placeholder="Enter new password"
-                      required
-                    />
-                  </div>
-                  
-                  <div>
-                    <Label htmlFor="confirmPassword">Confirm Password</Label>
-                    <Input
-                      id="confirmPassword"
-                      type="password"
-                      value={confirmPassword}
-                      onChange={(e) => setConfirmPassword(e.target.value)}
-                      placeholder="Confirm new password"
-                      required
-                    />
-                  </div>
-                  
-                  <div className="flex gap-2">
-                    <Button type="submit" size="sm" disabled={isSaving}>
-                      {isSaving ? 'Saving...' : (
-                        <>
-                          <Save className="h-4 w-4 mr-2" />
-                          Save
-                        </>
-                      )}
-                    </Button>
-                    <Button 
-                      type="button" 
-                      variant="outline" 
-                      size="sm"
-                      onClick={() => {
-                        setIsEditingPassword(false);
-                        setNewPassword('');
-                        setConfirmPassword('');
-                      }}
-                    >
-                      <X className="h-4 w-4 mr-2" />
-                      Cancel
-                    </Button>
-                  </div>
-                </form>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {workspaces.map((workspace) => (
+                    <Card key={workspace.id} className="hover:shadow-md transition-shadow">
+                      <CardContent className="p-4">
+                        <div className="flex items-start justify-between mb-3">
+                          <h3 className="font-semibold text-lg">{workspace.name}</h3>
+                          <Badge variant={workspace.is_draft ? "secondary" : "default"}>
+                            {workspace.is_draft ? 'Draft' : 'Published'}
+                          </Badge>
+                        </div>
+                        
+                        <div className="space-y-2 text-sm text-gray-600 mb-4">
+                          <div className="flex items-center gap-2">
+                            <FileText className="h-4 w-4" />
+                            {workspace.pdf_count} PDF files
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Settings className="h-4 w-4" />
+                            {workspace.form_fields_count} form fields
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Calendar className="h-4 w-4" />
+                            Updated {new Date(workspace.updated_at).toLocaleDateString()}
+                          </div>
+                        </div>
+                        
+                        <div className="flex gap-2">
+                          <Button 
+                            size="sm" 
+                            onClick={() => handleResumeWorkspace(workspace.id)}
+                            className="flex-1"
+                          >
+                            Resume
+                          </Button>
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            onClick={() => handleDeleteWorkspace(workspace.id)}
+                            className="text-red-600 hover:text-red-700"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
               )}
-            </CardContent>
-          </Card>
-
-          {/* Statistics */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <HardDrive className="h-5 w-5" />
-                Statistics
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-600">Workspaces</span>
-                <span className="font-semibold">{workspaces.length}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-600">PDF Files</span>
-                <span className="font-semibold">{pdfFiles.length}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-600">Total Storage</span>
-                <span className="font-semibold">
-                  {formatFileSize(pdfFiles.reduce((acc, file) => acc + (file.file_size || 0), 0))}
-                </span>
-              </div>
             </CardContent>
           </Card>
         </div>
 
-        {/* Workspaces */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <FolderOpen className="h-5 w-5" />
-              Your Workspaces
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {isLoading ? (
-              <div className="text-center py-8">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-4"></div>
-                <p className="text-gray-600">Loading workspaces...</p>
-              </div>
-            ) : workspaces.length === 0 ? (
-              <div className="text-center py-8">
-                <FolderOpen className="h-12 w-12 mx-auto mb-4 text-gray-400" />
-                <p className="text-gray-600">No workspaces yet</p>
-                <Button onClick={() => router.push('/dashboard')} className="mt-4">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Create Workspace
-                </Button>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {workspaces.map((workspace) => (
-                  <Card key={workspace.id} className="hover:shadow-md transition-shadow">
-                    <CardContent className="p-4">
-                      <div className="flex items-start justify-between mb-3">
-                        <h3 className="font-semibold text-lg">{workspace.name}</h3>
-                        <Badge variant={workspace.is_draft ? "secondary" : "default"}>
-                          {workspace.is_draft ? 'Draft' : 'Published'}
-                        </Badge>
-                      </div>
-                      
-                      <div className="space-y-2 text-sm text-gray-600 mb-4">
-                        <div className="flex items-center gap-2">
-                          <FileText className="h-4 w-4" />
-                          {workspace.pdf_count} PDF files
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Settings className="h-4 w-4" />
-                          {workspace.form_fields_count} form fields
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Calendar className="h-4 w-4" />
-                          Updated {new Date(workspace.updated_at).toLocaleDateString()}
-                        </div>
-                      </div>
-                      
-                      <div className="flex gap-2">
-                        <Button 
-                          size="sm" 
-                          onClick={() => handleResumeWorkspace(workspace.id)}
-                          className="flex-1"
-                        >
-                          Resume
-                        </Button>
-                        <Button 
-                          size="sm" 
-                          variant="outline"
-                          onClick={() => handleDeleteWorkspace(workspace.id)}
-                          className="text-red-600 hover:text-red-700"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
         {/* PDF Files */}
         <Card>
-          <CardHeader>
+          <CardHeader className="p-6 pb-3 flex justify-center items-center">
             <CardTitle className="flex items-center gap-2">
               <FileText className="h-5 w-5" />
               Uploaded PDF Files
