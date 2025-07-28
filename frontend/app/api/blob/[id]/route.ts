@@ -1,11 +1,26 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { get } from '@vercel/blob';
+
+// Check if blob storage is properly configured
+const isBlobConfigured = () => {
+  return process.env.BLOB_READ_WRITE_TOKEN && process.env.BLOB_READ_WRITE_TOKEN !== 'your_vercel_blob_token_here';
+};
 
 export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
+    // Check if blob storage is configured
+    if (!isBlobConfigured()) {
+      return NextResponse.json(
+        { 
+          error: 'Blob storage not configured. Please set BLOB_READ_WRITE_TOKEN environment variable.',
+          development: true 
+        },
+        { status: 503 }
+      );
+    }
+
     // In a real app, you would validate the user's ownership of this file
     // For now, we'll just check if the ID exists and return the blob
     const { id } = params;
@@ -21,18 +36,20 @@ export async function GET(
     // This is a simplified version - in production you'd look up the actual blob URL
     const blobUrl = `https://your-blob-store.com/${id}`;
     
-    // Fetch the blob content
-    const response = await get(blobUrl);
+    // Fetch the blob content using fetch instead of @vercel/blob
+    const response = await fetch(blobUrl);
     
-    if (!response) {
+    if (!response.ok) {
       return NextResponse.json(
         { error: 'File not found' },
         { status: 404 }
       );
     }
 
+    const blob = await response.blob();
+    
     // Return the file with appropriate headers
-    return new NextResponse(response, {
+    return new NextResponse(blob, {
       headers: {
         'Content-Type': 'application/pdf',
         'Content-Disposition': `attachment; filename="${id}.pdf"`,
@@ -53,6 +70,17 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
+    // Check if blob storage is configured
+    if (!isBlobConfigured()) {
+      return NextResponse.json(
+        { 
+          error: 'Blob storage not configured. Please set BLOB_READ_WRITE_TOKEN environment variable.',
+          development: true 
+        },
+        { status: 503 }
+      );
+    }
+
     const { id } = params;
     
     if (!id) {

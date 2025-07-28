@@ -22,7 +22,7 @@ class SessionManager {
     });
   }
 
-  private resetTimer() {
+  public resetTimer() {
     this.lastActivity = Date.now();
     this.clearTimeout();
     this.startTimer();
@@ -78,8 +78,16 @@ class SessionManager {
   }
 }
 
-// Global session manager instance
-export const sessionManager = new SessionManager();
+let sessionManagerInstance: SessionManager | null = null;
+export function getSessionManager(): SessionManager {
+  if (!sessionManagerInstance && typeof window !== 'undefined') {
+    sessionManagerInstance = new SessionManager();
+  }
+  if (!sessionManagerInstance) {
+    throw new Error('SessionManager can only be used in the browser');
+  }
+  return sessionManagerInstance;
+}
 
 // React hook for session management
 export function useSessionManager() {
@@ -87,6 +95,7 @@ export function useSessionManager() {
   const router = useRouter();
 
   const handleLogout = () => {
+    const sessionManager = getSessionManager();
     sessionManager.stop();
     localStorage.removeItem('authToken');
     logout();
@@ -96,6 +105,7 @@ export function useSessionManager() {
 
   const extendSession = () => {
     if (user) {
+      const sessionManager = getSessionManager();
       sessionManager.resetTimer();
     }
   };
@@ -103,14 +113,15 @@ export function useSessionManager() {
   return {
     handleLogout,
     extendSession,
-    timeRemaining: sessionManager.getTimeRemaining(),
-    isSessionActive: sessionManager.isSessionActive(),
+    timeRemaining: sessionManagerInstance?.getTimeRemaining(),
+    isSessionActive: sessionManagerInstance?.isSessionActive(),
   };
 }
 
 // Utility function to check if user is authenticated
 export function isAuthenticated(): boolean {
   const token = localStorage.getItem('authToken');
+  const sessionManager = getSessionManager();
   return !!token && sessionManager.isSessionActive();
 }
 
@@ -122,11 +133,13 @@ export function getAuthToken(): string | null {
 // Utility function to set auth token
 export function setAuthToken(token: string): void {
   localStorage.setItem('authToken', token);
+  const sessionManager = getSessionManager();
   sessionManager.start();
 }
 
 // Utility function to clear auth token
 export function clearAuthToken(): void {
   localStorage.removeItem('authToken');
+  const sessionManager = getSessionManager();
   sessionManager.stop();
 } 

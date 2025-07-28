@@ -9,8 +9,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/ca
 import { Badge } from '../../components/ui/badge';
 import { useAppStore, useUser } from '../../lib/store';
 import { useSessionManager } from '../../lib/auth';
+import type { User } from '../../types';
 import { 
-  User, 
+  User as UserIcon, 
   FileText, 
   Settings, 
   Edit, 
@@ -129,7 +130,13 @@ export default function ProfilePage() {
       });
 
       if (response.ok) {
-        const updatedUser = { ...user, name };
+        if (!user || !user.id || !user.email || !user.role || !user.status || !user.createdAt) {
+          throw new Error('User object is missing required fields');
+        }
+        const updatedUser: User = {
+          ...user,
+          name,
+        };
         const { setUser } = useAppStore.getState();
         setUser(updatedUser);
         toast.success('Profile updated successfully');
@@ -246,7 +253,7 @@ export default function ProfilePage() {
           <Card>
             <CardHeader className="p-6 pb-3 flex justify-center items-center">
               <CardTitle className="flex items-center gap-2">
-                <User className="h-5 w-5" />
+                <UserIcon className="h-5 w-5" />
                 User Information
               </CardTitle>
             </CardHeader>

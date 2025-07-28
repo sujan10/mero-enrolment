@@ -1,8 +1,24 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { put, del, list } from '@vercel/blob';
 
+// Check if blob storage is properly configured
+const isBlobConfigured = () => {
+  return process.env.BLOB_READ_WRITE_TOKEN && process.env.BLOB_READ_WRITE_TOKEN !== 'your_vercel_blob_token_here';
+};
+
 export async function POST(request: NextRequest) {
   try {
+    // Check if blob storage is configured
+    if (!isBlobConfigured()) {
+      return NextResponse.json(
+        { 
+          error: 'Blob storage not configured. Please set BLOB_READ_WRITE_TOKEN environment variable.',
+          development: true 
+        },
+        { status: 503 }
+      );
+    }
+
     const formData = await request.formData();
     const file = formData.get('file') as File;
     const filename = formData.get('filename') as string;
@@ -21,8 +37,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       url: response.url,
       pathname: response.pathname,
-      size: response.size,
-      uploadedAt: response.uploadedAt,
     });
   } catch (error) {
     console.error('Error uploading to blob:', error);
@@ -35,6 +49,17 @@ export async function POST(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   try {
+    // Check if blob storage is configured
+    if (!isBlobConfigured()) {
+      return NextResponse.json(
+        { 
+          error: 'Blob storage not configured. Please set BLOB_READ_WRITE_TOKEN environment variable.',
+          development: true 
+        },
+        { status: 503 }
+      );
+    }
+
     const { url } = await request.json();
 
     if (!url) {
@@ -58,8 +83,20 @@ export async function DELETE(request: NextRequest) {
 
 export async function GET(request: NextRequest) {
   try {
+    // Check if blob storage is configured
+    if (!isBlobConfigured()) {
+      return NextResponse.json(
+        { 
+          error: 'Blob storage not configured. Please set BLOB_READ_WRITE_TOKEN environment variable.',
+          development: true,
+          files: [] 
+        },
+        { status: 503 }
+      );
+    }
+
     const { searchParams } = new URL(request.url);
-    const prefix = searchParams.get('prefix');
+    const prefix = searchParams.get('prefix') || undefined;
 
     const { blobs } = await list({ prefix });
 
@@ -67,8 +104,6 @@ export async function GET(request: NextRequest) {
       files: blobs.map((blob) => ({
         url: blob.url,
         pathname: blob.pathname,
-        size: blob.size,
-        uploadedAt: blob.uploadedAt,
       })),
     });
   } catch (error) {
