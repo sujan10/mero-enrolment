@@ -518,7 +518,7 @@ const WorkflowStepper: React.FC = () => {
 
           {/* Current Step Content */}
           <div className="flex-1 overflow-hidden bg-gray-50">
-            <div className="h-full p-4">
+            <div className="h-full p-2">
               <Card className="h-full flex flex-col">
                 {/* Hide header for steps where we omit title/subtitle */}
                 {!( ['Upload PDF','Detect Fields','Build Form','Map Fields','Preview & Test','Publish Form'].includes(currentStepConfig.title) ) && (
@@ -529,7 +529,7 @@ const WorkflowStepper: React.FC = () => {
                     <p className="text-gray-600">{currentStepConfig.description}</p>
                   </CardHeader>
                 )}
-                <CardContent className={`${['Upload PDF','Detect Fields','Build Form','Map Fields','Preview & Test','Publish Form'].includes(currentStepConfig.title)?'pt-6':'pt-0'} flex-1 overflow-auto`}>
+                <CardContent className={`${['Upload PDF','Detect Fields','Build Form','Map Fields','Preview & Test','Publish Form'].includes(currentStepConfig.title)?'pt-1':'pt-0'} flex-1 overflow-auto`}>
                   {userRole === 'admin' && currentStep === 0 ? (
                     <PdfUploader 
                       onFilesReady={setReadyFiles}

@@ -15,6 +15,7 @@ interface FieldListPanelProps {
   onRename?: (fieldId: string, newName: string) => void;
   onChangeType?: (fieldId: string, newType: PDFFormField["type"]) => void;
   onDelete?: (fieldId: string) => void;
+  onBulkDelete?: (fieldIds: string[]) => void;
   addMode: boolean;
   onToggleAddMode: () => void;
   currentPage: number;
@@ -42,6 +43,7 @@ const FieldListPanel = forwardRef<FieldListPanelRef, FieldListPanelProps>(({
   onRename,
   onChangeType,
   onDelete,
+  onBulkDelete,
   addMode,
   onToggleAddMode,
   currentPage,
@@ -155,7 +157,12 @@ const FieldListPanel = forwardRef<FieldListPanelRef, FieldListPanelProps>(({
       "Delete Selected Fields",
       `Are you sure you want to delete ${selectedFields.length} selected field(s)?`,
       () => {
-        selectedFields.forEach(fieldId => onDelete?.(fieldId));
+        // Use bulk delete if available, otherwise fall back to individual deletes
+        if (onBulkDelete) {
+          onBulkDelete(selectedFields);
+        } else if (onDelete) {
+          selectedFields.forEach(fieldId => onDelete(fieldId));
+        }
       }
     );
     setWithSelectedOpen(false);

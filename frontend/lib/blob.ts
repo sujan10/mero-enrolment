@@ -146,10 +146,10 @@ export function validateFile(file: File, maxSize: number = 10 * 1024 * 1024): bo
     return false;
   }
 
-  // Check file type (PDF only for this project)
-  const allowedTypes = ['application/pdf'];
+  // Check file type (PDF, JPG, PNG)
+  const allowedTypes = ['application/pdf', 'image/jpeg', 'image/png'];
   if (!allowedTypes.includes(file.type)) {
-    toast.error('Only PDF files are allowed');
+    toast.error('Only PDF, JPG, and PNG files are allowed');
     return false;
   }
 

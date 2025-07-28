@@ -106,6 +106,18 @@ const DetectFieldsStep: React.FC = () => {
     });
   };
 
+  const handleBulkDelete = (ids: string[]) => {
+    const updated = pdf.formFields.filter((f) => !ids.includes(f.id));
+    updatePdfFields(pdf.id, updated);
+    if (selectedFieldId && ids.includes(selectedFieldId)) setSelectedFieldId(null);
+    // Remove all deleted fields from selection
+    setSelectedForMapping(prev => {
+      const newSet = new Set(prev);
+      ids.forEach(id => newSet.delete(id));
+      return newSet;
+    });
+  };
+
   const handleMoveField = (fieldId: string, newX: number, newY: number) => {
     const updated = pdf.formFields.map(f=>f.id===fieldId?{...f,x:newX,y:newY}:f);
     updatePdfFields(pdf.id, updated);
@@ -398,6 +410,7 @@ const DetectFieldsStep: React.FC = () => {
           onRename={handleRename}
           onChangeType={handleTypeChange}
           onDelete={handleDelete}
+          onBulkDelete={handleBulkDelete}
           addMode={addMode}
           onToggleAddMode={() => setAddMode((m) => !m)}
           currentPage={pageIndex+1}
