@@ -3,15 +3,15 @@ import { put, del, list } from '@vercel/blob';
 export interface BlobUploadResult {
   url: string;
   pathname: string;
-  size: number;
-  uploadedAt: Date;
+  size?: number;
+  uploadedAt?: Date;
 }
 
 export interface BlobFile {
   url: string;
   pathname: string;
-  size: number;
-  uploadedAt: Date;
+  size?: number;
+  uploadedAt?: Date;
 }
 
 /**
@@ -31,8 +31,8 @@ export async function uploadToBlobServer(
     return {
       url: response.url,
       pathname: response.pathname,
-      size: response.size,
-      uploadedAt: response.uploadedAt,
+      // Note: size and uploadedAt are not available in PutBlobResult
+      // They would need to be calculated separately if needed
     };
   } catch (error) {
     console.error('Error uploading to blob (server):', error);
