@@ -2,6 +2,13 @@
 
 import { useEffect } from "react";
 
+// Extend Window interface to include Stagewise property
+declare global {
+  interface Window {
+    __STAGEWISE_INITIALIZED__?: boolean;
+  }
+}
+
 // Global flag to prevent multiple initializations
 let stagewiseInitialized = false;
 
